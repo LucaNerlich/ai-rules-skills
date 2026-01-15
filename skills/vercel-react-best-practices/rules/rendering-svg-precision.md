@@ -1,6 +1,6 @@
 ---
 title: Optimize SVG Precision
-impact: MEDIUM
+impact: LOW
 impactDescription: reduces file size
 tags: rendering, svg, optimization, svgo
 ---

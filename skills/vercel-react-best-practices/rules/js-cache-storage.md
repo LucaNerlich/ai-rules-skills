@@ -53,7 +53,9 @@ function getCookie(name: string) {
 }
 ```
 
-**Important:** If storage can change externally (another tab, server-set cookies), invalidate cache:
+**Important (invalidate on external changes):**
+
+If storage can change externally (another tab, server-set cookies), invalidate cache:
 
 ```typescript
 window.addEventListener('storage', (e) => {

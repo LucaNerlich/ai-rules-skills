@@ -34,7 +34,9 @@ function Highlighter({ text, query }: Props) {
 }
 ```
 
-**Warning:** Global regex (`/g`) has mutable `lastIndex` state:
+**Warning (global regex has mutable state):**
+
+Global regex (`/g`) has mutable `lastIndex` state:
 
 ```typescript
 const regex = /foo/g

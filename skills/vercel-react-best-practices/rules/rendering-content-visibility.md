@@ -1,7 +1,7 @@
 ---
 title: CSS content-visibility for Long Lists
-impact: MEDIUM
-impactDescription: 10× faster initial render
+impact: HIGH
+impactDescription: faster initial render
 tags: rendering, css, content-visibility, long-lists
 ---
 

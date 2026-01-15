@@ -1,6 +1,6 @@
 ---
 title: Narrow Effect Dependencies
-impact: MEDIUM
+impact: LOW
 impactDescription: minimizes effect re-runs
 tags: rerender, useEffect, dependencies, optimization
 ---

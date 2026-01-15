@@ -1,6 +1,6 @@
 ---
 title: Deduplicate Global Event Listeners
-impact: MEDIUM-HIGH
+impact: LOW
 impactDescription: single listener for N components
 tags: client, swr, event-listeners, subscription
 ---
@@ -62,7 +62,7 @@ function useKeyboardShortcut(key: string, callback: () => void) {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }
+  })
 }
 
 function Profile() {

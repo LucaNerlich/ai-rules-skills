@@ -1,6 +1,6 @@
 ---
 title: Hoist Static JSX Elements
-impact: MEDIUM
+impact: LOW
 impactDescription: avoids re-creation
 tags: rendering, jsx, static, optimization
 ---
@@ -42,3 +42,5 @@ function Container() {
 ```
 
 This is especially helpful for large and static SVG nodes, which can be expensive to recreate on every render.
+
+**Note:** If your project has [React Compiler](https://react.dev/learn/react-compiler) enabled, the compiler automatically hoists static JSX elements and optimizes component re-renders, making manual hoisting unnecessary.

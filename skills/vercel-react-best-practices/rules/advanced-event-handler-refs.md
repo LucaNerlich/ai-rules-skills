@@ -36,3 +36,20 @@ function useWindowEvent(event: string, handler: () => void) {
   }, [event])
 }
 ```
+
+**Alternative: use `useEffectEvent` if you're on latest React:**
+
+```tsx
+import { useEffectEvent } from 'react'
+
+function useWindowEvent(event: string, handler: () => void) {
+  const onEvent = useEffectEvent(handler)
+
+  useEffect(() => {
+    window.addEventListener(event, onEvent)
+    return () => window.removeEventListener(event, onEvent)
+  }, [event])
+}
+```
+
+`useEffectEvent` provides a cleaner API for the same pattern: it creates a stable function reference that always calls the latest version of the handler.

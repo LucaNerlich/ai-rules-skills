@@ -56,6 +56,39 @@ async function DataDisplay() {
 
 Sidebar, Header, and Footer render immediately. Only DataDisplay waits for data.
 
+**Alternative (share promise across components):**
+
+```tsx
+function Page() {
+  // Start fetch immediately, but don't await
+  const dataPromise = fetchData()
+  
+  return (
+    <div>
+      <div>Sidebar</div>
+      <div>Header</div>
+      <Suspense fallback={<Skeleton />}>
+        <DataDisplay dataPromise={dataPromise} />
+        <DataSummary dataPromise={dataPromise} />
+      </Suspense>
+      <div>Footer</div>
+    </div>
+  )
+}
+
+function DataDisplay({ dataPromise }: { dataPromise: Promise<Data> }) {
+  const data = use(dataPromise) // Unwraps the promise
+  return <div>{data.content}</div>
+}
+
+function DataSummary({ dataPromise }: { dataPromise: Promise<Data> }) {
+  const data = use(dataPromise) // Reuses the same promise
+  return <div>{data.summary}</div>
+}
+```
+
+Both components share the same promise, so only one fetch occurs. Layout renders immediately while both components wait together.
+
 **When NOT to use this pattern:**
 
 - Critical data needed for layout decisions (affects positioning)
