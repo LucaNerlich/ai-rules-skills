@@ -6,3 +6,4 @@
 - npx npx skills i vercel-labs/agent-skills
 - npx skills add better-auth/skills
 - curl -fsSL https://ui-skills.com/install | bash
+- curl -fsSL https://rams.ai/install | bash
