@@ -3,4 +3,5 @@
 - https://cursor.com/docs/context/skills
 - https://vercel.com/blog/introducing-react-best-practices
 - https://vercel.com/design/guidelines
-- npx add-skill vercel-labs/agent-skills
+- npx npx skills i vercel-labs/agent-skills
+- npx skills add better-auth/skills
