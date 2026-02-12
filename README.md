@@ -7,3 +7,29 @@
 - npx skills add better-auth/skills
 - curl -fsSL https://ui-skills.com/install | bash
 - curl -fsSL https://rams.ai/install | bash
+
+## MCP
+
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "strapi-docs": {
+      "type": "http",
+      "url": "https://strapi-docs.mcp.kapa.ai",
+      "headers": {}
+    },
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    },
+    "aem-content-readonly":{
+      "url": "https://mcp.adobeaemcloud.com/adobe/mcp/content-readonly"
+    },
+    "aem-content":{
+      "url": "https://mcp.adobeaemcloud.com/adobe/mcp/content"
+    }
+  }
+}
+```
