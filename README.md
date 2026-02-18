@@ -7,6 +7,7 @@
 - npx skills add better-auth/skills
 - curl -fsSL https://ui-skills.com/install | bash
 - curl -fsSL https://rams.ai/install | bash
+- https://github.com/millionco/react-doctor
 
 ## MCP
 
