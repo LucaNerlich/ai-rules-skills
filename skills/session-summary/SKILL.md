@@ -41,7 +41,7 @@ Review the entire conversation history and extract:
 
 ```
 VAULT = $OBSIDIAN_VAULT or ~/Documents/notizen
-DIR   = {VAULT}/{project}/sessions/
+DIR   = {VAULT}/sessions/{project}/
 ```
 
 Filename rules:
@@ -54,7 +54,7 @@ Sanitize the project name the same way: lowercase, replace spaces with hyphens, 
 
 ### 3. Create directories and write the note
 
-Resolve the vault path (see "Vault Path" above), then use `mkdir -p` via Shell to ensure `{VAULT}/{project}/sessions/` exists.
+Resolve the vault path (see "Vault Path" above), then use `mkdir -p` via Shell to ensure `{VAULT}/sessions/{project}/` exists.
 
 Check for filename collisions with Glob before writing. If a collision is found, increment the counter suffix.
 
