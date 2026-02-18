@@ -37,6 +37,9 @@ Review the entire conversation history and extract:
 - **Open questions**: anything unresolved or worth revisiting
 - **References**: links to docs, PRs, issues, or related resources mentioned
 
+If a **ticket** was provided, also extract:
+- **PR summary**: a concise management-level summary suitable for a pull request description (see PR Summary section below)
+
 ### 2. Build the file path
 
 ```
@@ -95,10 +98,34 @@ tags: [session, {project}, {ticket if present}]
 - {Links to docs, PRs, issues, or related Obsidian notes using [[wikilinks]]}
 ```
 
+## PR Summary
+
+When a **ticket** is provided, append a `## PR Summary` section to the note **after References**. This block is designed to be copied directly into a pull request description.
+
+Write it from the perspective of someone presenting the change to reviewers and stakeholders -- focus on *what* and *why*, not the investigation journey. Keep it concise; reviewers should be able to understand the change in under 30 seconds.
+
+```markdown
+## PR Summary
+
+> **{ticket}: {Issue Title}**
+>
+> ### What changed
+> - {1-4 bullet points: what was modified and why, at a level a reviewer or PM can follow}
+>
+> ### How it was tested
+> - {Build/compile results, test suite results, manual verification -- whatever actually happened in the session}
+>
+> ### Notes for reviewers
+> - {Optional: anything reviewers should pay attention to, edge cases, related follow-ups, or "None."}
+```
+
+If no ticket was provided, omit the entire PR Summary section.
+
 ## Rules
 
 - Derive ALL content from the current conversation. Do not fabricate steps or changes that didn't happen.
 - If a section has no content (e.g. no open questions), write "None." instead of leaving it empty.
 - Use Obsidian `[[wikilinks]]` when referencing other notes in the vault.
 - Keep the issue title short (under 80 characters).
-- After writing, confirm the full file path to the user.
+- The PR Summary must be self-contained -- someone reading only that block should understand the change without reading the rest of the note.
+- After writing, confirm the full file path to the user. If a PR Summary was generated, also print it separately so the user can copy it.
