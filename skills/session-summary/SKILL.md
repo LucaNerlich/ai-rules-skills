@@ -50,18 +50,30 @@ DIR   = {VAULT}/sessions/{project}/
 Filename rules:
 - With ticket: `{ticket}_{YYYY-MM-DD}_{title}.md` (e.g. `PROJ-1234_2026-02-18_fix-auth-redirect.md`)
 - Without ticket: `{YYYY-MM-DD}_{title}.md` (e.g. `2026-02-18_fix-auth-redirect.md`)
-- If that filename already exists, append `_2`, `_3`, etc. before `.md`
 
 Derive `{title}` from the issue title: lowercase, replace spaces with hyphens, strip special characters, max 50 chars.
 Sanitize the project name the same way: lowercase, replace spaces with hyphens, strip special characters.
 
-### 3. Create directories and write the note
+### 3. Check for an existing session doc
+
+Before writing, check whether a session doc for this session already exists in `{DIR}`:
+
+1. **With ticket:** use Glob to search for `{DIR}/{ticket}_{YYYY-MM-DD}_*.md`. If one or more matches are found, pick the first match — that is the existing session doc.
+2. **Without ticket:** use Glob to search for `{DIR}/{YYYY-MM-DD}_*.md`. If one or more matches are found, read each candidate and check the frontmatter `type: session-summary` field to confirm it is a session doc (not some other note). Pick the first confirmed match.
+
+If an existing doc is found:
+- **Update it in-place** by overwriting its content with the freshly generated note (using the template below). Preserve the original filename — do NOT rename or create a new file.
+- The updated note should incorporate information from both the previous content and the current conversation. Read the existing file first, then merge: keep any steps, files, knowledge, and references from the old note that are still relevant, and append/update with new information from the current session.
+
+If no existing doc is found:
+- Create a new file using the filename rules above.
+- If the computed filename collides with a non-session file, append `_2`, `_3`, etc. before `.md`.
+
+### 4. Create directories and write the note
 
 Resolve the vault path (see "Vault Path" above), then use `mkdir -p` via Shell to ensure `{VAULT}/sessions/{project}/` exists.
 
-Check for filename collisions with Glob before writing. If a collision is found, increment the counter suffix.
-
-Write the note using the template below.
+Write (or overwrite) the note using the template below.
 
 ## Note Template
 
@@ -128,4 +140,5 @@ If no ticket was provided, omit the entire PR Summary section.
 - Use Obsidian `[[wikilinks]]` when referencing other notes in the vault.
 - Keep the issue title short (under 80 characters).
 - The PR Summary must be self-contained -- someone reading only that block should understand the change without reading the rest of the note.
-- After writing, confirm the full file path to the user. If a PR Summary was generated, also print it separately so the user can copy it.
+- After writing, confirm the full file path to the user and indicate whether the file was **created** or **updated**. If a PR Summary was generated, also print it separately so the user can copy it.
+- When updating an existing doc, do not discard prior content blindly. Merge old and new information so the note reflects the full history of work on that session/ticket for the day.
