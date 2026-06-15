@@ -1,0 +1,179 @@
+{
+  "metadata": {
+    "skill_name": "ingest",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-15T13:12:12Z",
+    "evals_run": [
+      0
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 302.0,
+        "tokens": 66317,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Created a source page for each of the 2 fresh clippings",
+          "passed": true,
+          "evidence": "parallax=['css-native-parallax-effect.md'], index=['simplified-index-management.md']"
+        },
+        {
+          "text": "Source pages have type:source, ingested:, source_file->processed/",
+          "passed": true,
+          "evidence": "css-native-parallax-effect.md:ok; simplified-index-management.md:ok"
+        },
+        {
+          "text": "Created at least one new concept/entity page",
+          "passed": true,
+          "evidence": "['aem-oak-index-management.md', 'scroll-driven-animations.md']"
+        },
+        {
+          "text": "New pages carry cluster tags",
+          "passed": true,
+          "evidence": "tags present"
+        },
+        {
+          "text": "index.md updated with new page entries",
+          "passed": true,
+          "evidence": "parallax+index/oak found in index.md"
+        },
+        {
+          "text": "log.md appended ingest entries",
+          "passed": true,
+          "evidence": "ingest entries found"
+        },
+        {
+          "text": "Both clippings moved to processed/ and top level cleared",
+          "passed": true,
+          "evidence": "moved=True, top_clear=True"
+        },
+        {
+          "text": "Raw clipping body preserved; only processed/ingested frontmatter added",
+          "passed": true,
+          "evidence": "body intact + markers added"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 327.5,
+        "tokens": 69206,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Created a source page for each of the 2 fresh clippings",
+          "passed": true,
+          "evidence": "parallax=['css-native-parallax-effect.md'], index=['simplified-index-management.md']"
+        },
+        {
+          "text": "Source pages have type:source, ingested:, source_file->processed/",
+          "passed": true,
+          "evidence": "css-native-parallax-effect.md:ok; simplified-index-management.md:ok"
+        },
+        {
+          "text": "Created at least one new concept/entity page",
+          "passed": true,
+          "evidence": "['oak-indexing.md', 'scroll-driven-animations.md']"
+        },
+        {
+          "text": "New pages carry cluster tags",
+          "passed": true,
+          "evidence": "tags present"
+        },
+        {
+          "text": "index.md updated with new page entries",
+          "passed": true,
+          "evidence": "parallax+index/oak found in index.md"
+        },
+        {
+          "text": "log.md appended ingest entries",
+          "passed": true,
+          "evidence": "ingest entries found"
+        },
+        {
+          "text": "Both clippings moved to processed/ and top level cleared",
+          "passed": true,
+          "evidence": "moved=True, top_clear=True"
+        },
+        {
+          "text": "Raw clipping body preserved; only processed/ingested frontmatter added",
+          "passed": true,
+          "evidence": "body intact + markers added"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 302.0,
+        "stddev": 0.0,
+        "min": 302.0,
+        "max": 302.0
+      },
+      "tokens": {
+        "mean": 66317.0,
+        "stddev": 0.0,
+        "min": 66317,
+        "max": 66317
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 327.5,
+        "stddev": 0.0,
+        "min": 327.5,
+        "max": 327.5
+      },
+      "tokens": {
+        "mean": 69206.0,
+        "stddev": 0.0,
+        "min": 69206,
+        "max": 69206
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-25.5",
+      "tokens": "-2889"
+    }
+  },
+  "notes": []
+}

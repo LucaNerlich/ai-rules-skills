@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Created a source page for each of the 2 fresh clippings",
+      "passed": true,
+      "evidence": "parallax=['css-native-parallax-effect.md'], index=['simplified-index-management.md']"
+    },
+    {
+      "text": "Source pages have type:source, ingested:, source_file->processed/",
+      "passed": true,
+      "evidence": "css-native-parallax-effect.md:ok; simplified-index-management.md:ok"
+    },
+    {
+      "text": "Created at least one new concept/entity page",
+      "passed": true,
+      "evidence": "['aem-oak-index-management.md', 'scroll-driven-animations.md']"
+    },
+    {
+      "text": "New pages carry cluster tags",
+      "passed": true,
+      "evidence": "tags present"
+    },
+    {
+      "text": "index.md updated with new page entries",
+      "passed": true,
+      "evidence": "parallax+index/oak found in index.md"
+    },
+    {
+      "text": "log.md appended ingest entries",
+      "passed": true,
+      "evidence": "ingest entries found"
+    },
+    {
+      "text": "Both clippings moved to processed/ and top level cleared",
+      "passed": true,
+      "evidence": "moved=True, top_clear=True"
+    },
+    {
+      "text": "Raw clipping body preserved; only processed/ingested frontmatter added",
+      "passed": true,
+      "evidence": "body intact + markers added"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 8,
+    "failed": 0,
+    "total": 8
+  }
+}

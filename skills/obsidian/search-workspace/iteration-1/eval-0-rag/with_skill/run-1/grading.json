@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "References the core [[rag]] concept page",
+      "passed": true,
+      "evidence": "[[rag]] present"
+    },
+    {
+      "text": "References a vector-DB entity ([[pgvector]]/[[pinecone]]/[[faiss]])",
+      "passed": true,
+      "evidence": "vector-db entity linked"
+    },
+    {
+      "text": "Results grouped by category",
+      "passed": true,
+      "evidence": "5 category labels present"
+    },
+    {
+      "text": "Cites at least one source page",
+      "passed": true,
+      "evidence": "source page cited"
+    },
+    {
+      "text": "Uses Obsidian base:query/tag/search CLI",
+      "passed": true,
+      "evidence": "used CLI queries"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  }
+}

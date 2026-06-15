@@ -1,0 +1,22 @@
+[
+  {"query": "ingest the new clippings in raw/", "should_trigger": true},
+  {"query": "i dropped a couple PDFs in raw/PDFs, process them into the wiki", "should_trigger": true},
+  {"query": "catch up the wiki — there are unprocessed sources sitting in raw/ that need folding in", "should_trigger": true},
+  {"query": "process Simplified Index Management.md and create the wiki pages for it", "should_trigger": true},
+  {"query": "there's a new clipping about CSS parallax in raw, add it to the knowledge base", "should_trigger": true},
+  {"query": "import all the fresh sources and update the index and glossary", "should_trigger": true},
+  {"query": "turn the docs in raw/Clippings into entity and concept pages", "should_trigger": true},
+  {"query": "we have new raw material to fold into the wiki, can you run the ingest", "should_trigger": true},
+  {"query": "process the backlog of clippings and mark them processed afterwards", "should_trigger": true},
+  {"query": "add these articles I just clipped to the ai-wiki", "should_trigger": true},
+  {"query": "search the wiki for what we already have on RAG", "should_trigger": false},
+  {"query": "ingest this sales CSV into my postgres analytics database", "should_trigger": false},
+  {"query": "import my browser bookmarks into Chrome from this html file", "should_trigger": false},
+  {"query": "process this scanned receipt image and extract the line items", "should_trigger": false},
+  {"query": "summarize this PDF for me and email the summary to my manager", "should_trigger": false},
+  {"query": "what sources does the wiki already have on fine-tuning?", "should_trigger": false},
+  {"query": "move the processed files into an archive folder", "should_trigger": false},
+  {"query": "fix the markdown formatting in wiki/index.md", "should_trigger": false},
+  {"query": "load this dataset into a pandas dataframe and clean the nulls", "should_trigger": false},
+  {"query": "add a new column showing profit margin to my Q4 spreadsheet", "should_trigger": false}
+]

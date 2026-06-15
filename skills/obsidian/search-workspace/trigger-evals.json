@@ -1,0 +1,22 @@
+[
+  {"query": "what do we have in the wiki on RAG and vector databases? give me the relevant pages", "should_trigger": true},
+  {"query": "look up pgvector in my knowledge base", "should_trigger": true},
+  {"query": "find all the pages about context engineering", "should_trigger": true},
+  {"query": "search the ai-wiki for anything covering DPO vs PPO", "should_trigger": true},
+  {"query": "i'm writing a doc on fine-tuning — what sources do we already have on it in the wiki?", "should_trigger": true},
+  {"query": "what does the knowledge base say about prompt injection and jailbreaking", "should_trigger": true},
+  {"query": "pull up everything tagged agents in the wiki", "should_trigger": true},
+  {"query": "find the notes related to Karpathy's nanochat", "should_trigger": true},
+  {"query": "whats in the wiki about llm guardrails for financial services", "should_trigger": true},
+  {"query": "do we have anything on the model context protocol? show me what exists before i write more", "should_trigger": true},
+  {"query": "search my codebase for the function that handles the auth token refresh", "should_trigger": false},
+  {"query": "grep the repo for leftover TODO and FIXME comments", "should_trigger": false},
+  {"query": "search the web for the latest GPT-5 pricing and context window", "should_trigger": false},
+  {"query": "find the file called config.yaml somewhere in this project", "should_trigger": false},
+  {"query": "ingest the two new clippings sitting in raw/Clippings", "should_trigger": false},
+  {"query": "search my gmail for the invoice Adobe sent last month", "should_trigger": false},
+  {"query": "open the Glossary base in obsidian for me", "should_trigger": false},
+  {"query": "look up the current version of the react npm package", "should_trigger": false},
+  {"query": "find a good Thai restaurant near the office", "should_trigger": false},
+  {"query": "what's the difference between a hash map and a tree map", "should_trigger": false}
+]

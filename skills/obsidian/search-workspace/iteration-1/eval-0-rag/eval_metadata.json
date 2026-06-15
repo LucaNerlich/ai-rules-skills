@@ -1,0 +1,22 @@
+{
+  "eval_id": 0,
+  "eval_name": "rag-vector-db-lookup",
+  "prompt": "What does the AI wiki have on RAG and vector databases? Give me the relevant pages.",
+  "assertions": [
+    {
+      "text": "References the core [[rag]] concept page as a wikilink"
+    },
+    {
+      "text": "References at least one vector-database entity page (e.g. [[pgvector]], [[pinecone]], or [[faiss]])"
+    },
+    {
+      "text": "Returns results grouped by category (e.g. Concepts/Entities, Topics, Sources, Analyses)"
+    },
+    {
+      "text": "Cites at least one source page (a wiki/sources/ page) as a wikilink"
+    },
+    {
+      "text": "Uses Obsidian base:query and/or tag/search CLI commands rather than reading wiki/index.md wholesale"
+    }
+  ]
+}

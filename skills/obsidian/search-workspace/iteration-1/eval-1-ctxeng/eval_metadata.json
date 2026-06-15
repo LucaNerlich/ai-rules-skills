@@ -1,0 +1,22 @@
+{
+  "eval_id": 1,
+  "eval_name": "context-engineering-research",
+  "prompt": "I'm researching context engineering \u2014 pull up everything in the wiki on it.",
+  "assertions": [
+    {
+      "text": "References the [[context-engineering]] concept page as a wikilink"
+    },
+    {
+      "text": "References at least two additional related pages (e.g. [[context-rot]], [[context-compaction]], [[just-in-time-context]], [[structured-note-taking]])"
+    },
+    {
+      "text": "Cites at least one source page (e.g. [[effective-context-engineering-anthropic]] or [[context-engineering-guide-promptingguide]])"
+    },
+    {
+      "text": "Returns a ranked/grouped result set rather than a single undifferentiated list"
+    },
+    {
+      "text": "Uses Obsidian CLI queries (base:query on Glossary.base, tag, or search) for retrieval"
+    }
+  ]
+}

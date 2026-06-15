@@ -1,0 +1,29 @@
+{
+  "skill_name": "search",
+  "evals": [
+    {
+      "id": 0,
+      "name": "rag-vector-db-lookup",
+      "prompt": "What does the AI wiki have on RAG and vector databases? Give me the relevant pages.",
+      "assertions": [
+        {"text": "References the core [[rag]] concept page as a wikilink"},
+        {"text": "References at least one vector-database entity page (e.g. [[pgvector]], [[pinecone]], or [[faiss]])"},
+        {"text": "Returns results grouped by category (e.g. Concepts/Entities, Topics, Sources, Analyses)"},
+        {"text": "Cites at least one source page (a wiki/sources/ page) as a wikilink"},
+        {"text": "Uses Obsidian base:query and/or tag/search CLI commands rather than reading wiki/index.md wholesale"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "context-engineering-research",
+      "prompt": "I'm researching context engineering — pull up everything in the wiki on it.",
+      "assertions": [
+        {"text": "References the [[context-engineering]] concept page as a wikilink"},
+        {"text": "References at least two additional related pages (e.g. [[context-rot]], [[context-compaction]], [[just-in-time-context]], [[structured-note-taking]])"},
+        {"text": "Cites at least one source page (e.g. [[effective-context-engineering-anthropic]] or [[context-engineering-guide-promptingguide]])"},
+        {"text": "Returns a ranked/grouped result set rather than a single undifferentiated list"},
+        {"text": "Uses Obsidian CLI queries (base:query on Glossary.base, tag, or search) for retrieval"}
+      ]
+    }
+  ]
+}

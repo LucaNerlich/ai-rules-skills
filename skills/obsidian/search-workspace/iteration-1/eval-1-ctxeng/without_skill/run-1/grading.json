@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "References [[context-engineering]]",
+      "passed": true,
+      "evidence": "linked"
+    },
+    {
+      "text": "References >=2 related context pages",
+      "passed": true,
+      "evidence": "6 related pages linked"
+    },
+    {
+      "text": "Cites a context-engineering source page",
+      "passed": true,
+      "evidence": "source cited"
+    },
+    {
+      "text": "Ranked/grouped result set",
+      "passed": true,
+      "evidence": "grouped output"
+    },
+    {
+      "text": "Uses Obsidian CLI queries",
+      "passed": false,
+      "evidence": "no CLI"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.8,
+    "passed": 4,
+    "failed": 1,
+    "total": 5
+  }
+}

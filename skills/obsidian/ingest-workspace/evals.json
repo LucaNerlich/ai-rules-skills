@@ -1,0 +1,21 @@
+{
+  "skill_name": "ingest",
+  "evals": [
+    {
+      "id": 0,
+      "name": "ingest-fresh-clippings",
+      "prompt": "Ingest the fresh clippings sitting in raw/ into the wiki.",
+      "note": "Runs against a SANDBOX copy of the vault at /tmp/ai-wiki-sandbox so the real wiki is untouched. Two fresh clippings await: 'CSS-native parallax effect.md' and 'Simplified Index Management.md'.",
+      "assertions": [
+        {"text": "Creates a source summary page under wiki/sources/ for each of the 2 fresh clippings"},
+        {"text": "Each source page has frontmatter with type: source, an ingested: date, and a source_file pointing into raw/Clippings/processed/"},
+        {"text": "Creates or updates at least one concept or entity page for notable content"},
+        {"text": "New entity/concept pages carry cluster tags (e.g. web-development, knowledge-management) so they land in a Glossary view"},
+        {"text": "Adds entries to wiki/index.md for the new pages"},
+        {"text": "Appends at least one ingest entry to wiki/log.md"},
+        {"text": "Moves both clippings into raw/Clippings/processed/ and adds processed tag + ingested date to their frontmatter"},
+        {"text": "Does not edit the body text of the raw clippings beyond adding processed/ingested frontmatter"}
+      ]
+    }
+  ]
+}
