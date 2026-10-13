@@ -1,101 +1,109 @@
 ---
 name: session-summary
-description: Summarize the current coding session and write structured notes into Obsidian. Use when the user says "summarize session", "write session notes", "session debrief", "log what we did", "write a summary", or asks to document what happened in the session.
+description: "Write a structured session debrief into Obsidian and print a ready-to-paste ticket comment (and PR summary when relevant). Use for /session-summary, \"summarize session\", \"session debrief\", \"log what we did\", or \"write session notes\". Not for in-chat catch-up (/ketchup) or rebuilding working context (/recall)."
+disable-model-invocation: true
 ---
 
 # Session Summary
 
-Write a structured session debrief note into the user's Obsidian vault, and print a ready-to-paste ticket comment.
+Write one durable session debrief note, then print the blocks the user pastes into a ticket and (when relevant) a PR.
 
-## Vault Path
+## Not this skill
 
-Resolve the vault path in this order:
-1. Environment variable `OBSIDIAN_VAULT` (e.g. `export OBSIDIAN_VAULT=~/Documents/notizen`)
-2. Fallback: `~/Documents/notizen`
-
-Run `echo $OBSIDIAN_VAULT` via Shell to check. If unset, use the fallback path. Verify the resolved path exists before writing.
+- In-chat catch-up since the user's last message → `/ketchup`
+- Rebuild working context before resuming work → `/recall`
+- Append-only decision TSV for long unattended runs → `/show-me-your-work`
 
 ## Parameters
 
-The user provides:
-- **project** (required): folder name under the vault root (e.g. `m10z`, `Adobe`, `GBR`)
-- **ticket** (optional): ticket identifier (e.g. `PROJ-1234`), used as filename prefix, tag, and ticket comment header
+- **project** (required): vault folder under `sessions/` (e.g. `m10z`, `pnn-it`, `GBR`). Infer from the repo name or path when obvious; otherwise ask once.
+- **ticket** (optional): id used in the filename, tags, and ticket-comment header (e.g. `PROJ-1234`)
 
-If the user hasn't provided the project name, ask for it before proceeding.
+## Vault path
+
+Resolve in order; stop at the first path that exists as a directory:
+
+1. `$OBSIDIAN_VAULT` (run `echo $OBSIDIAN_VAULT` via Shell)
+2. `~/Documents/notizen`
+
+If neither exists (common on Cloud Agents): write under `/opt/cursor/artifacts/sessions/{project}/` instead, say the Obsidian vault was unavailable, and still print the full note plus the ticket/PR blocks so the user can paste into Obsidian locally.
 
 ## Workflow
 
-### 1. Gather context from the conversation
+### 1. Gather evidence (read-only)
 
-Review the entire conversation history and extract:
+Pull from every source that applies. Do not invent steps, files, or outcomes.
 
-- **Context**: what system/feature this touches, what the expected behaviour was, why this was being worked on — written for someone with no prior knowledge
-- **Issue title**: concise one-line summary
-- **Issue description**: what the problem was, including symptoms and any error messages or log output (verbatim where relevant)
-- **Reproduction steps**: exact steps to reproduce, plus environment details (versions, config, data state) — include only if this was a debugging/bug-fix session
-- **Solution**: what was done to resolve it
-- **Decision log**: what alternative approaches were considered, why each was rejected, and why the chosen approach was selected — omit if no meaningful decisions were made
-- **Steps taken**: chronological list of investigation and implementation steps
-- **Files changed**: list of files modified with brief descriptions of each change
-- **Knowledge gained**: key takeaways, patterns discovered, gotchas — each item must contain at least one specific artifact (file path, function name, error message, config key, version number, or direct quote)
-- **Open questions**: anything unresolved or worth revisiting
-- **References**: links to docs, PRs, issues, or related resources mentioned
+1. **This chat.** Decisions, errors, fixes, open questions, links.
+2. **Live git** (when the workspace is a repo): current branch, `git log` / `git diff` against the base branch, commit subjects, touched paths. Prefer `git` over memory for **Files Changed**.
+3. **PR / issue links** when `gh` or an existing PR URL is available.
+4. **Cloud Agent runs** when the `cursor-cloud` tools exist: follow `references/cloud-sources.md`. Fold sibling/child agent work into Steps, Files, References, and the new **Agents** section. Mine long transcripts with subagents; keep only the reduced timeline in this thread.
 
-Always extract:
-- **Ticket comment**: a compact, past-tense block designed to be pasted directly into Jira/Linear/GitHub Issues (see Ticket Comment section below)
+Strip secrets before any write: API keys, tokens, passwords, private URLs with embedded credentials, raw `.env` values, session cookies.
 
-If a **ticket** was provided, also extract:
-- **PR summary**: a concise management-level summary suitable for a pull request description (see PR Summary section below)
+### 2. Extract fields
 
-### 2. Build the file path
+From the evidence, fill:
+
+| Field | Notes |
+| --- | --- |
+| Context | System/feature, expected behaviour, why — for a cold reader |
+| Issue title | One line, under 80 chars |
+| Issue | Symptoms; quote errors/logs when useful |
+| Reproduction | Bug/debug sessions only; include environment |
+| Solution | What resolved it |
+| Decision log | Alternatives considered/rejected/chosen — omit section body with `None.` if none |
+| Steps taken | Chronological investigation + implementation |
+| Files changed | Path + brief change; verify against `git` when possible |
+| Agents | Cloud run names, `bcId`s, URLs, branches, PR links — omit section if none |
+| Knowledge gained | Each bullet needs a concrete artifact (path, symbol, error, config key, version, quote) |
+| Open questions | Unresolved follow-ups |
+| References | Docs, PRs, issues, `[[wikilinks]]` |
+| Ticket comment | Always — see template |
+| PR summary | When a **ticket** was given **or** this branch has/created a PR |
+
+### 3. Build the file path
 
 ```
-VAULT = $OBSIDIAN_VAULT or ~/Documents/notizen
+VAULT = first existing vault path, else /opt/cursor/artifacts
 DIR   = {VAULT}/sessions/{project}/
 ```
 
-Filename rules:
-- With ticket: `{ticket}_{YYYY-MM-DD}_{title}.md` (e.g. `PROJ-1234_2026-02-18_fix-auth-redirect.md`)
-- Without ticket: `{YYYY-MM-DD}_{title}.md` (e.g. `2026-02-18_fix-auth-redirect.md`)
+Sanitize `{project}` and `{title}`: lowercase, spaces → hyphens, strip special chars; title max 50 chars from the issue title.
 
-Derive `{title}` from the issue title: lowercase, replace spaces with hyphens, strip special characters, max 50 chars.
-Sanitize the project name the same way: lowercase, replace spaces with hyphens, strip special characters.
+- With ticket: `{ticket}_{YYYY-MM-DD}_{title}.md`
+- Without: `{YYYY-MM-DD}_{title}.md`
 
-### 3. Check for an existing session doc
+### 4. Update or create
 
-Before writing, check whether a session doc for this session already exists in `{DIR}`:
+Before writing, look for an existing session doc in `{DIR}`:
 
-1. **With ticket:** use Glob to search for `{DIR}/{ticket}_{YYYY-MM-DD}_*.md`. If one or more matches are found, pick the first match — that is the existing session doc.
-2. **Without ticket:** use Glob to search for `{DIR}/{YYYY-MM-DD}_*.md`. If one or more matches are found, read each candidate and check the frontmatter `type: session-summary` field to confirm it is a session doc (not some other note). Pick the first confirmed match.
+1. **With ticket:** Glob `{DIR}/{ticket}_{YYYY-MM-DD}_*.md` — use the first match.
+2. **Without ticket:** Glob `{DIR}/{YYYY-MM-DD}_*.md`, read candidates, keep the first with frontmatter `type: session-summary`.
 
-If an existing doc is found:
-- **Update it in-place** by overwriting its content with the freshly generated note (using the template below). Preserve the original filename — do NOT rename or create a new file.
-- Read the existing file first and merge: keep steps, files, knowledge, decisions, and references from the old note that are still relevant, and append/update with new information from the current session.
-- If the solution changed significantly from what the old note described, set `status: superseded` on the old content and note the change at the top of the Steps Taken section.
+**Existing doc:** overwrite in place; keep the filename. Read first and merge: retain still-relevant steps, files, knowledge, decisions, agents, and references; append new facts from this run. If the solution changed materially, add a one-line note at the top of **Steps Taken** (do not set `status: superseded` on the file you are updating).
 
-If no existing doc is found:
-- Create a new file using the filename rules above.
-- If the computed filename collides with a non-session file, append `_2`, `_3`, etc. before `.md`.
+**New doc:** create with the filename rules. On collision with a non-session file, append `_2`, `_3`, … before `.md`.
 
-### 4. Create directories and write the note
+Only set `status: superseded` and `superseded_by:` when a **new** note replaces an **older** note that should stay on disk (different ticket or day owns the work now). Leave the old file in place with those fields; do not delete it.
 
-Resolve the vault path (see "Vault Path" above), then use `mkdir -p` via Shell to ensure `{VAULT}/sessions/{project}/` exists.
+### 5. Write and print
 
-Write (or overwrite) the note using the template below.
+`mkdir -p` the directory, write the note from the template below, then print:
 
-### 5. Print the Ticket Comment
-
-After writing the file, print the Ticket Comment block to the console so the user can copy it directly — no further action required from the user.
+1. Confirmation: full path + **created** or **updated** (+ **vault fallback** when not Obsidian)
+2. Ticket Comment block (always)
+3. PR Summary block (when generated)
 
 ---
 
-## Note Template
+## Note template
 
 ```markdown
 ---
 type: session-summary
 project: {project}
-ticket: {ticket or empty string}
+ticket: {ticket or empty}
 date: {YYYY-MM-DD}
 status: active
 superseded_by:
@@ -105,99 +113,91 @@ tags: [session, {project}, {ticket if present}]
 # {Issue Title}
 
 ## Context
-{2-3 sentences: what system/feature this touches, what the expected behaviour was, and why this was being worked on — written for a cold reader with no prior knowledge of this session}
+{2-3 sentences for a cold reader}
 
 ## Issue
-{What the problem was: symptoms, error messages (verbatim where useful), affected behaviour}
+{Symptoms, errors verbatim when useful, affected behaviour}
 
 ## Reproduction
-{Only include for bug/debugging sessions. Exact steps to reproduce.}
+{Bug/debug only. Exact steps.}
 
-**Environment at the time:** {versions, config flags, data state, or "N/A"}
+**Environment at the time:** {versions, config, data state, or N/A}
 
 ## Solution
-{High-level description of what was done to resolve it}
+{What resolved it}
 
 ## Decision Log
-- **Considered:** {alternative approach}
-  **Rejected because:** {specific reason — constraint, risk, evidence}
-- **Chose:** {approach taken}
-  **Because:** {specific reason}
+- **Considered:** {approach}
+  **Rejected because:** {constraint, risk, or evidence}
+- **Chose:** {approach}
+  **Because:** {reason}
 
 ## Steps Taken
-1. {Step-by-step chronology of what was investigated and changed}
+1. {Chronology}
 
 ## Files Changed
-- `{path/to/file}` — {brief description of change}
+- `{path}` — {brief change}
+
+## Agents
+- [{name}]({url}) (`{bcId}`) — {branch, PR, one-line outcome}
 
 ## Knowledge Gained
-- {Key takeaways, patterns discovered, gotchas. Every bullet must contain at least one specific artifact: file path, function name, error message, config key, version number, or direct quote.}
+- {Each bullet includes a concrete artifact}
 
 ## Open Questions / Follow-ups
-- [ ] {Anything remaining or worth revisiting}
+- [ ] {Item}
 
 ## References
-- {Links to docs, PRs, issues, or related Obsidian notes using [[wikilinks]]}
+- {URLs, PR/issue links, [[wikilinks]]}
 ```
+
+Omit the **Reproduction** heading when this was not a bug/debug session. Omit **Agents** when there are no cloud runs to cite. For any other empty section, write `None.`
 
 ---
 
-## Ticket Comment
+## Ticket comment
 
-Always generate this block, with or without a ticket. It is designed to be pasted directly into a Jira/Linear/GitHub issue comment by someone who was not present in the session.
-
-Write it in past tense. Keep it under 150 words. Do not repeat the solution in generic terms — every sentence must contain a specific artifact (function name, file, error, config key, version, or decision).
+Always generate. Past tense. Under 150 words. Every sentence names a concrete artifact.
 
 ```markdown
 ## Ticket Comment (copy into Jira/Linear/GitHub)
 
 ---
-**Root cause:** {one specific sentence — name the actual cause, not "a bug was found"}
-**Fix:** {one specific sentence — name the file, function, or config that changed and why}
-**Why it wasn't caught earlier:** {if applicable — test gap, missing guard, assumption that was wrong}
-**Regression risk:** {what related areas could be affected, or "None identified"}
-**Decision note:** {one sentence on the key tradeoff made, if any — omit if no meaningful decision}
+**Root cause:** {specific cause}
+**Fix:** {file, function, or config that changed, and why}
+**Why it wasn't caught earlier:** {test gap / missing guard / bad assumption — or omit}
+**Regression risk:** {related areas, or None identified}
+**Decision note:** {key tradeoff — or omit}
 ---
 ```
 
 ---
 
-## PR Summary
+## PR summary
 
-When a **ticket** is provided, append a `## PR Summary` section to the note **after References**. This block is designed to be copied directly into a pull request description.
-
-Write it from the perspective of someone presenting the change to reviewers and stakeholders — focus on *what* and *why*, not the investigation journey. Keep it concise; reviewers should be able to understand the change in under 30 seconds.
+When a ticket was provided **or** a PR exists for this work, append after **References**, and print separately after the Ticket Comment.
 
 ```markdown
 ## PR Summary
 
-> **{ticket}: {Issue Title}**
+> **{ticket or branch}: {Issue Title}**
 >
 > ### What changed
-> - {1-4 bullet points: what was modified and why, at a level a reviewer or PM can follow}
+> - {1-4 bullets a reviewer or PM can follow}
 >
 > ### How it was tested
-> - {Build/compile results, test suite results, manual verification — whatever actually happened in the session}
+> - {What actually ran in the session}
 >
 > ### Notes for reviewers
-> - {Anything reviewers should pay attention to, edge cases, related follow-ups, or "None."}
+> - {Risks, edge cases, follow-ups, or None.}
 ```
-
-If no ticket was provided, omit the entire PR Summary section.
 
 ---
 
 ## Rules
 
-- Derive ALL content from the current conversation. Do not fabricate steps or changes that didn't happen.
-- Every bullet point in Knowledge Gained must contain at least one specific artifact: a file path, error message, function name, config key, version number, or direct quote from the conversation. Generic observations ("the code was complex", "debugging took time") must be omitted.
-- If a section has no content (e.g. no open questions, no decisions made), write "None." instead of leaving it empty. Omit the Reproduction section entirely if this was not a debugging session.
-- Use Obsidian `[[wikilinks]]` when referencing other notes in the vault.
-- Keep the issue title short (under 80 characters).
-- The Ticket Comment must be self-contained — someone reading only that block should understand the root cause and fix without reading the rest of the note.
-- The PR Summary must be self-contained — someone reading only that block should understand the change without reading the rest of the note.
-- After writing, confirm the full file path and whether the file was **created** or **updated**.
-- Print the Ticket Comment block separately at the end so the user can copy it without opening the file.
-- If a PR Summary was generated, also print it separately after the Ticket Comment.
-- When updating an existing doc, do not discard prior content blindly. Merge old and new information so the note reflects the full history of work on that session/ticket for the day.
-- If the solution described in an existing note was significantly revised during the current session, note this explicitly at the top of Steps Taken and consider setting `status: superseded` and `superseded_by:` if a new ticket now owns the work.
+- Derive content only from gathered evidence. No fabricated steps or files.
+- Knowledge Gained bullets without a concrete artifact are deleted, not softened.
+- Ticket Comment and PR Summary must each stand alone.
+- Prefer `git` paths and PR URLs over recollections when they disagree.
+- After writing, state the path and created/updated (and vault fallback if used).
