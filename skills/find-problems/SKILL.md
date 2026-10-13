@@ -1,6 +1,6 @@
 ---
 name: find-problems
-description: "Scan a codebase module-by-module with parallel subagents to find bugs, correctness and security defects, over-engineering, and lean refactoring opportunities, all through the Ponytail lazy-senior-dev lens. Produces an evidence-backed findings report that /create-issues turns into prioritized GitHub issues. Use for /find-problems, \"find problems\", \"scan for bugs\", \"audit the codebase\", \"find refactoring opportunities\"."
+description: "Scan a codebase module-by-module with parallel subagents to find bugs, correctness and security defects, over-engineering, and lean refactoring opportunities, all through the Ponytail lazy-senior-dev lens. Produces an evidence-backed findings report — each finding carrying root cause, trigger, blast radius, reproduction, suggested fix, effort, and a cluster key that /create-issues groups by — which /create-issues turns into prioritized GitHub issues. Use for /find-problems, \"find problems\", \"scan for bugs\", \"audit the codebase\", \"find refactoring opportunities\"."
 disable-model-invocation: true
 ---
 
@@ -79,24 +79,40 @@ Scan for, in priority order:
 Read enough to trace the real flow before reporting. Every finding must cite a real
 location. Do not report cosmetic nits with no impact. If the module is clean, say so.
 
-Output EXACTLY one block per finding:
+Output EXACTLY one block per finding. One line per field — real detail, never filler; these fields are the raw material `/create-issues` writes into the issue body, so state the mechanism rather than restating the title:
 
 ### <imperative title, <80 chars>
 - module: <module>
 - location: <path>:<line>  (add more lines if the issue spans several)
 - category: bug | security | refactor | over-engineering | dead-code | test-gap | perf
 - suggested priority: high | medium | low
+- cluster: <short key naming the shared pattern, e.g. "unchecked-presign-key"> — findings
+  that share a key are the same root cause and must be filed as ONE issue by /create-issues
+- root cause: <the underlying mistake, not the symptom; for a repeated pattern, why it recurs
+  (missing shared helper, wrong default, inconsistent contract, copy-paste)>
+- trigger: <the input, state, or sequence that reaches the defect — every request, a specific
+  payload, a cold cache, a concurrent writer>
 - evidence: <quote the offending line(s) or name the exact command output>
-- why it matters: <impact in one or two sentences>
-- suggested fix: <the leanest correct change; delete/shrink/reuse before rewrite>
+- why it matters: <impact in one or two sentences; say whether it fires always or on an edge>
+- blast radius: <who or what is affected if it fires — users, tenants, data; is it live in
+  production; data loss, security exposure, silent wrong result, or crash>
+- repro / detection: <the exact command, request, or steps that expose it, and observed vs
+  expected — or "read-confirmed" plus how you confirmed it>
+- suggested fix: <the leanest correct change; delete/shrink/reuse before rewrite, name the
+  types and behaviours, say what it does NOT touch>
+- alternatives: <optional: the heavier or tempting fix and why it is not the right one>
+- effort: S | M | L
 - confidence: confirmed | likely | speculative
+
+Keep the fields to one line each. Leave a field out only when it genuinely does not apply; do
+not write "N/A" padding or speculate to fill it.
 
 Priority rubric (shared with /create-issues):
 - high   = broken behaviour, security, data loss, auth/billing/correctness bugs, regressions.
 - medium = degraded UX/perf, missing validation, tech debt that impedes work, small features.
 - low    = nits, style, docs, refactors, nice-to-haves.
 
-End with: "Module <module>: <N> findings (<H> high, <M> medium, <L> low)."
+End with: "Module <module>: <N> findings (<H> high, <M> medium, <L> low, <C> clusters)."
 
 --- PONYTAIL RULESET (paste references/ponytail.md verbatim below this line) ---
 <ponytail ruleset>
@@ -115,6 +131,7 @@ In addition to the per-module sweep:
 Merge the subagent reports, then:
 
 - Dedupe by concept, not wording (the same root cause found in two modules is one finding).
+- Align `cluster` keys: the same pattern found in several modules must share one key so `/create-issues` files it once. Split a key only when the fix genuinely differs.
 - Drop anything without a `location`, and anything purely cosmetic with no impact.
 - Rank by `suggested priority`, then by impact-to-effort (cheap high-impact fixes first).
 - Note coverage: which modules were scanned, which were skipped and why, and any low-confidence areas this leaves unverified.
@@ -123,9 +140,10 @@ Merge the subagent reports, then:
 
 Emit the consolidated findings in the exact block format from step 2, grouped by priority, followed by:
 
-- a summary table: priority, title, module, `file:line`, category
+- a summary table: priority, title, module, `file:line`, category, cluster, effort
 - counts per priority, per category, per module
 - a one-line coverage note
+- the cluster keys present, so the reader sees how many issues `/create-issues` will file
 
 State the next step explicitly: **"Hand this report to `/create-issues`."** The report is the input `/create-issues` consumes; it does not need to be filed by this skill.
 
@@ -133,6 +151,8 @@ State the next step explicitly: **"Hand this report to `/create-issues`."** The 
 
 - Read-only. No edits, no issues, no commits.
 - Every finding needs evidence: a `file:line` reference or a command output. No speculation presented as fact — use `confidence: speculative` when you could not verify.
+- Report the mechanism, not the title: every finding names its `trigger`, `root cause`, and `blast radius` in one line each. A block that only restates the title is not a finding.
+- One `cluster` key per shared pattern, identical across modules. Same key ⇒ same issue.
 - Prefer a few high-signal findings over a nit dump.
 - Correctness before leanness: never propose a leaner change that removes validation at trust boundaries, error handling that prevents data loss, security, accessibility, concurrency safety, or resource cleanup.
 - Ponytail is mandatory for every finding and every suggested fix.

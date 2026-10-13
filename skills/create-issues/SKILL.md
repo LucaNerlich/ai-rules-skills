@@ -65,6 +65,8 @@ Cluster findings that share a **root cause**, a **fix**, or a **fix surface**. A
 - **Fix** — a single edit (or one small series of edits) resolves every instance.
 - **Fix surface** — the instances live in one module, file, or pattern the reviewer can verify together.
 
+When the source is a `/find-problems` report, its `cluster` key is the first grouping signal: identical keys are the same root cause and belong in one issue. Trust the key but verify it — split a cluster whose instances need different fixes.
+
 One cluster → one issue. The issue names the *pattern* as its title and lists every instance as evidence, so nothing is lost.
 
 Merge when instances share the fix:
