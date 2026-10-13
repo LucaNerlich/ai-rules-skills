@@ -1,6 +1,6 @@
 ---
 name: create-issues
-description: "Turn findings from a review, plan, codebase scan, or conversation into well-scoped GitHub issues, each labelled priority:high, priority:medium, or priority:low. Use for /create-issues, \"file issues\", \"create tickets from this\", \"turn this report into issues\", or \"log these findings\". Pairs with /fix-issues, which consumes the same labels."
+description: "Turn findings from a review, plan, codebase scan, or conversation into well-scoped GitHub issues, each labelled priority:high, priority:medium, or priority:low. The middle link between /find-problems (which produces the report) and /fix-issues (which consumes the labels). Use for /create-issues, \"file issues\", \"create tickets from this\", \"turn this report into issues\", or \"log these findings\"."
 disable-model-invocation: true
 ---
 
@@ -30,6 +30,7 @@ Run and stop with a clear message if any fails:
 
 Use the source the user named; otherwise infer one:
 
+- the consolidated report from `/find-problems` (the recommended upstream — it already carries evidence, category, and a suggested priority per finding)
 - a review report, plan file, or PR/issue URL they pasted
 - a codebase scan (below)
 - findings already present in this conversation
