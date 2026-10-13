@@ -31,6 +31,7 @@ Run and stop with a clear message if any fails:
 Use the source the user named; otherwise infer one:
 
 - the consolidated report from `/find-problems` (the recommended upstream — its per-finding `evidence`, `why it matters`, `suggested fix`, `category`, and `confidence` are the raw material for the detailed body you write in step 5)
+- the handoff block from `/review-issues` (PR findings with their `review-issues:<fingerprint>` markers) — so review findings re-enter the backlog and `/fix-issues` picks them up. Map severity to priority there: `blocker`/`major` → `priority:high`, `minor` → `priority:medium`, `nit` → `priority:low`
 - a review report, plan file, or PR/issue URL they pasted
 - a codebase scan (below)
 - findings already present in this conversation
@@ -47,13 +48,16 @@ Every candidate needs evidence: a `file:line` reference, a command output, or a 
 
 ## 2. Dedupe against open issues
 
-Search before drafting:
+Search before drafting — **open and closed**, so a regression of a fixed issue is a deliberate new issue linked to the old one, never a blind duplicate:
 
 ```
-gh issue list --state open --search "<key terms>" --limit 20 --json number,title,labels,url
+gh issue list --state all --search "<key terms>" --limit 20 --json number,title,state,labels,url
 ```
 
-Match on the concept, not the wording. If an open issue already covers a candidate, skip it and name the issue that covers it. Never file a duplicate.
+Match on the concept, not the wording.
+
+- An open issue covers it → skip it and name the issue that covers it.
+- A closed issue matches → file only when the problem is genuinely back (a regression) and link it (`Regressed in #<old>`). Do not re-file a closed issue that was fixed and has not recurred.
 
 ## 3. Cluster related findings
 
@@ -198,7 +202,9 @@ gh label create "priority:medium" --color D93F0B --force
 gh label create "priority:low"    --color 0E8A16 --force
 ```
 
-`--force` makes label creation idempotent. Create issues one at a time so each returned URL is captured:
+`--force` makes label creation idempotent. If a `gh label create` fails (no label permission on the repo), do not abort the run: file the issues **without** `--label`, then report the missing labels and the exact commands for a maintainer to run. Never let a missing label cost you the issue.
+
+Create issues one at a time so each returned URL is captured:
 
 ```
 gh issue create --title "<title>" --label "priority:<p>" --body-file - <<'EOF'
