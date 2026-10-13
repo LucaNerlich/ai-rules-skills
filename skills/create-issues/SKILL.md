@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Create Issues
 
-Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog that `/fix-issues` consumes, highest priority first.
+Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog that `/fix-issues` consumes, highest priority first. Run the whole chain in one command with `/sweep`.
 
 ## Priority labels (shared contract)
 

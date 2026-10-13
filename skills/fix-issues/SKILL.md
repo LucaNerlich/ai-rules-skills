@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Fix Issues
 
-Take the prioritized backlog produced by `/create-issues` and fix it, highest priority first. Every fix lands as one layer in a **stacked PR chain** built with `gh stack` (the [gh-stack](https://github.com/github/gh-stack) CLI extension): the highest-priority fix sits at the bottom of the stack (base = trunk), and each later fix stacks on top of the one below it. Reviewers read the chain top-down, one small diff per issue.
+Take the prioritized backlog produced by `/create-issues` and fix it, highest priority first. Every fix lands as one layer in a **stacked PR chain** built with `gh stack` (the [gh-stack](https://github.com/github/gh-stack) CLI extension): the highest-priority fix sits at the bottom of the stack (base = trunk), and each later fix stacks on top of the one below it. Reviewers read the chain top-down, one small diff per issue. Run the whole chain in one command with `/sweep`.
 
 ## Priority order (shared contract)
 

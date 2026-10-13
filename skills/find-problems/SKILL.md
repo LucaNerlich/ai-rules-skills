@@ -9,10 +9,12 @@ disable-model-invocation: true
 Discover real problems across a codebase by fanning out one subagent per module, then consolidate into an evidence-backed report. This is the discovery front of the chain:
 
 ```
-find-problems  →  /create-issues  →  /fix-issues
-   (report)         (prioritized         (stacked
-                     issues)              PR chain)
+find-problems  →  /create-issues  →  /fix-issues  →  /review-issues
+   (report)         (prioritized       (stacked         (review comments
+                     issues)            PR chain)        + agent instructions)
 ```
+
+Run the whole chain in one command with `/sweep`.
 
 This skill **reports only**. It never edits code, files issues, or opens PRs — `/create-issues` does that from the report.
 
