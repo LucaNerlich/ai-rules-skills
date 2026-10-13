@@ -20,30 +20,20 @@ This skill **reports only**. It never edits code, files issues, or opens PRs —
 
 Every scan runs in **Ponytail, lazy senior dev mode**, because the goal is *correct and lean* code: fix the real bug at the root, and delete complexity rather than add more.
 
-Prefer the bundled Ponytail subskills when they are available (installed as the `@dietrichgebert/ponytail` plugin/commands):
+The ruleset is **vendored** at [`references/ponytail.md`](references/ponytail.md) — the ladder, the rules, the "never lazy about" list, and the `review` / `audit` / `debt` finding formats and tags. It is a slim, pinned subset of Ponytail 4.9.0 (MIT), so the lens travels with the skill into harnesses where the plugin is not installed.
+
+Prefer the installed Ponytail commands when they are present (they add the always-on mode and live state):
 
 | Need | Invoke |
 | --- | --- |
-| Base mode for every scanning agent | `/ponytail full` (default; `ultra` when the user wants maximum deletion) |
+| Base mode for the session | `/ponytail full` (default; `ultra` for maximum deletion) |
 | Whole-repo over-engineering audit | `/ponytail-audit` |
-| Over-engineering review of a specific diff/PR | `/ponytail-review` |
+| Over-engineering review of a diff/PR | `/ponytail-review` |
 | Harvest deferred `ponytail:` shortcuts | `/ponytail-debt` |
 
-If those commands are not available in the current harness, apply the ladder inline instead (below). Either way, **every finding is judged against Ponytail**, and every refactor suggestion must be the leanest *correct* version: `delete` > `shrink` > `reuse an existing helper` > `rewrite`.
+When they are absent, follow `references/ponytail.md` directly. Either way, **every finding is judged against Ponytail**, and every refactor suggestion must be the leanest *correct* version: `delete` > `shrink` > `reuse an existing helper` > `rewrite`. Correctness is never traded away — see the "Never lazy about" list in the reference.
 
-**The ladder** (stop at the first rung that holds, after understanding the flow):
-
-1. Does this need to exist at all? (YAGNI)
-2. Does the codebase already do it? Reuse the existing helper/type/pattern.
-3. Does the standard library do it?
-4. Does a native platform feature cover it?
-5. Does an already-installed dependency solve it?
-6. Can it be one line?
-7. Only then: the minimum code that works.
-
-**Ponytail rules:** no unrequested abstractions, no avoidable new dependencies, no boilerplate, deletion over addition, boring over clever, fewest files, shortest working diff — but only once you understand the problem. Bug fix = root cause, not symptom: find the shared function all callers route through and fix it once.
-
-**Never lazy about correctness** — these are in scope and must not be simplified away: input validation at trust boundaries, error handling that prevents data loss, security, accessibility, resource cleanup, and concurrency correctness. A "leaner" change that removes any of these is itself a finding.
+**Before spawning subagents, read `references/ponytail.md` (it sits beside this SKILL.md) and paste its contents into every subagent prompt.** A subagent starts with fresh context and does not inherit the plugin's always-on injection, so the ruleset must travel in the prompt.
 
 ## 1. Map the modules
 
@@ -65,12 +55,10 @@ Each subagent is **read-only**. Give every one this prompt, filled in:
 You are auditing the "<module>" module at "<path>" of <repo>. READ-ONLY: do not edit
 files, create issues, or run mutating commands. Produce findings only.
 
-You operate in Ponytail, lazy senior dev mode: the goal is correct AND lean code.
-The ladder: does it need to exist (YAGNI)? Does the codebase already do it (reuse)?
-Stdlib? Native feature? Existing dependency? One line? Only then new code. Deletion
-over addition, shortest diff that fixes the root cause. Never lazy about correctness:
-input validation at trust boundaries, error handling that prevents data loss, security,
-accessibility, concurrency, resource cleanup are all in scope.
+You operate in Ponytail, lazy senior dev mode: the goal is correct AND lean code. The
+complete ruleset — the ladder, the rules, the "never lazy about" list, and the finding
+formats — is appended to this prompt as PONYTAIL RULESET. Follow it: prefer deletion over
+addition and reuse over rewrite, fix root causes, and never trade away correctness.
 
 Scan for, in priority order:
 1. Correctness bugs: wrong operators/boundaries/off-by-one, null/None/undefined
@@ -107,15 +95,18 @@ Priority rubric (shared with /create-issues):
 - low    = nits, style, docs, refactors, nice-to-haves.
 
 End with: "Module <module>: <N> findings (<H> high, <M> medium, <L> low)."
+
+--- PONYTAIL RULESET (paste references/ponytail.md verbatim below this line) ---
+<ponytail ruleset>
 ```
 
 ## 3. Ponytail passes
 
 In addition to the per-module sweep:
 
-- **Whole-repo complexity:** run `/ponytail-audit` (or apply the ladder manually) for the cross-module over-engineering view — ranked, biggest cut first.
-- **Deferred shortcuts:** run `/ponytail-debt` to harvest every `ponytail:` marker (a deliberate simplification with a named ceiling and upgrade path). Each is a finding, especially any `no-trigger` one that no longer names how to revisit it.
-- **Diff scope:** when the target is a PR or branch rather than the whole repo, run `/ponytail-review` on the diff and scan only the touched modules.
+- **Whole-repo complexity:** run `/ponytail-audit`, or apply the audit format from `references/ponytail.md`, for the cross-module over-engineering view — ranked, biggest cut first.
+- **Deferred shortcuts:** run `/ponytail-debt`, or grep for the marker per `references/ponytail.md`, to harvest every `ponytail:` marker (a deliberate simplification with a named ceiling and upgrade path). Each is a finding, especially any `no-trigger` one that no longer names how to revisit it.
+- **Diff scope:** when the target is a PR or branch rather than the whole repo, run `/ponytail-review`, or apply the review format from `references/ponytail.md`, on the diff and scan only the touched modules.
 
 ## 4. Consolidate
 
