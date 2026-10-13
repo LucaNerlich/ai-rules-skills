@@ -1,6 +1,6 @@
 ---
 name: create-issues
-description: "Turn findings from a review, plan, codebase scan, or conversation into well-scoped GitHub issues, each labelled priority:high, priority:medium, or priority:low. The middle link between /find-problems (which produces the report) and /fix-issues (which consumes the labels). Use for /create-issues, \"file issues\", \"create tickets from this\", \"turn this report into issues\", or \"log these findings\"."
+description: "Turn findings from a review, plan, codebase scan, or conversation into well-scoped, evidence-backed GitHub issues with detailed bodies (finding, root cause, reproduction, suggested fix), each labelled priority:high, priority:medium, or priority:low. Groups related findings into one issue per root cause instead of one per site. The middle link between /find-problems (which produces the report) and /fix-issues (which consumes the labels). Use for /create-issues, \"file issues\", \"create tickets from this\", \"turn this report into issues\", or \"log these findings\"."
 disable-model-invocation: true
 ---
 
@@ -30,7 +30,7 @@ Run and stop with a clear message if any fails:
 
 Use the source the user named; otherwise infer one:
 
-- the consolidated report from `/find-problems` (the recommended upstream — it already carries evidence, category, and a suggested priority per finding)
+- the consolidated report from `/find-problems` (the recommended upstream — its per-finding `evidence`, `why it matters`, `suggested fix`, `category`, and `confidence` are the raw material for the detailed body you write in step 5)
 - a review report, plan file, or PR/issue URL they pasted
 - a codebase scan (below)
 - findings already present in this conversation
@@ -90,49 +90,103 @@ Related-but-distinct issues stay distinct and reference each other in the body (
 
 Assign exactly one priority label from the table. When torn, pick the lower one only if the impact is cosmetic; otherwise pick the higher one and say why in the body.
 
-## 5. Draft issues
+## 5. Verify and expand (read-only)
+
+A one-line report row makes a one-line issue. Before writing the body, **open the cited locations and read the surrounding code** so the issue states the real mechanism, not a restatement of the scan. This is read-only: you are gathering detail for the body, never editing or fixing.
+
+For each cluster, collect:
+
+- the **actual offending code**, quoted (a few lines, not the whole file) — the report's `file:line` is a pointer, prove it
+- the **mechanism**: the input, state, or sequence that leads to the wrong outcome, step by step
+- the **call path**: who reaches this code (endpoint, job, scheduler, UI action) — an unreachable branch is lower risk than one hit on every request
+- the **root cause**: the underlying mistake, and for a cluster why the pattern repeated (missing helper, wrong default, copy-paste)
+- the **blast radius**: severity, whether it is live in production, and who is affected
+- the **detection**: the exact request, test command, or steps that expose it, or how you confirmed it by reading
+
+If a detail cannot be verified, write what you know and mark it (`unverified` / `confidence: likely|speculative`). **Never invent detail to fill a section** — a short, true body beats a padded one, and padding is the same pollution as too many issues.
+
+## 6. Draft issues
 
 One issue per **cluster** from step 3 (or per single finding that stands alone). Each issue must be independently shippable: a reviewer can verify the whole cluster with one acceptance check. If a cluster spans two unrelated fixes, split it and note the relationship.
 
-Body template:
+Body template — fill every section; mark the optional ones `N/A` only when they truly do not apply:
 
-```markdown
-## Context
-What this is and why it matters, for a cold reader. For a cluster, name the pattern
-and how many sites it spans.
+````markdown
+<One-sentence TL;DR: what is broken and where.>
 
-## Evidence
-- `path/to/file.ext:123` — what is wrong there
-- command output or report quote when relevant
+## Finding
 
-## Instances
-Checklist of every site the cluster covers — one line per instance, so nothing is lost:
-- [ ] `path/to/file.ext:123` — <what is wrong here>
-- [ ] `path/to/other.ext:45` — <same pattern>
+### What is wrong
+The mechanism, in prose: given <input/state>, <control flow>, the result is <wrong
+outcome> because <reason>. For a cluster, describe the pattern once and say how many
+sites repeat it.
 
-## Impact
-Who or what is affected, and how badly. Call out the worst instance and the priority mix.
+### Where
+- `path/to/file.ext:123` — the offending code, quoted:
+  ```<lang>
+  <2-5 lines of the actual code>
+  ```
+- Add every location the cluster covers; a table is fine when there are many.
+
+### Why it matters
+Who or what is affected, how badly, and how often. State whether this is live in
+production and what the worst observed or plausible consequence is (data loss, 500s,
+silent wrong result, security exposure).
+
+### Root cause
+The underlying mistake, not the symptom. For a cluster, why the same mistake recurs
+(missing shared helper, wrong default, inconsistent contract, copy-paste).
+
+### Reproduction / detection
+The exact steps, request, or command that shows the defect — or, if it is only
+read-confirmed, say how. Include the observed vs expected result.
+
+### Evidence
+- quoted code, command output, stack trace, or report line
+- how it was verified (test run, trace, code read)
+- `confidence: confirmed | likely | speculative`
+
+## Suggested fix
+
+### Approach
+The leanest correct change, in order of preference: delete > shrink > reuse an existing
+helper > rewrite. Name the types, functions, and behaviours to change — not file paths
+that will drift.
+
+### Sketch
+Optional. A short diff-shaped outline or pseudocode of the fix. Direction, not a full
+design.
+
+### Alternatives considered
+Optional but encouraged. The heavier or tempting fix and why it is not the right one.
+
+### Out of scope
+What this issue deliberately does not touch, so the fix-issues pass stays bounded.
 
 ## Acceptance criteria
-- [ ] Observable check that proves this is done.
-- [ ] Test that should exist after the fix.
+- [ ] Observable check per instance in the cluster — the reviewer runs it once.
+- [ ] Test that should exist after the fix (name the case, not just "add tests").
+
+## Rollback / risk
+Optional. Risk of the change, migration or compatibility notes, and how to revert.
 
 ## Related
 Optional. `Related to #123` / `Part of #456` when the issue sits beside a distinct one.
 
-## Suggested approach
-Optional. The one fix that covers every instance — direction, not a full design. Name
-types and behaviours, not file paths that will drift.
-```
+<!-- metadata, keep for /fix-issues: category: <bug|security|refactor|over-engineering|
+dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely|speculative> -->
+````
 
 Rules for bodies:
 
 - No secrets: strip tokens, keys, credentials, and `.env` values.
-- Evidence, not speculation. If you did not verify something, say so.
+- Evidence, not speculation. If you did not verify something, say so and label it.
 - Titles under ~80 characters, imperative, and unique — for a cluster name the pattern ("Guard every presign path against empty keys"), not one site.
-- Every instance of the cluster appears in `## Instances`; do not silently drop members to keep the issue short.
+- Every instance of the cluster appears under `### Where`; do not silently drop members to keep the issue short.
+- Detail means the mechanism, the reproduction, and a concrete fix — not longer prose. No filler, no restating the same evidence in three sections, no speculative "could also affect…" chains.
+- Aim for a body a cold reader can act on without re-running the scan: roughly 20-40 lines for a single finding, scaling with the number of instances, not with adjectives.
 
-## 6. Show the batch, then create
+## 7. Show the batch, then create
 
 Present a table first — priority, title, evidence, **findings folded in (cluster size)** — and get the user's go-ahead unless they already said "create them" / "just file them". State the collapse: "N findings → M issues". Then ensure the labels exist and create the issues:
 
@@ -150,7 +204,7 @@ gh issue create --title "<title>" --label "priority:<p>" --body-file - <<'EOF'
 EOF
 ```
 
-## 7. Report
+## 8. Report
 
 Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; merged → the issue that folded it in). Give counts per priority and the raw-findings → issues ratio. This table is the handoff to `/fix-issues`.
 
@@ -160,5 +214,7 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 - Never duplicate an open issue.
 - Cluster before drafting: one issue per root cause, not one per site. Merge repeated findings; split only for a named reason (different root cause, blast radius, or shipping).
 - Every instance of a cluster is listed in the issue; grouping never drops a finding.
+- Write the mechanism, not the symptom: verify the cited code (read-only), state input → wrong outcome → root cause, and give a concrete `Suggested fix`. A thin body is a bug in this skill.
+- Detail is mechanism and reproduction, never filler. Do not pad, repeat evidence, or speculate beyond what you verified.
 - Exactly one priority label per issue; a cluster takes its highest member's priority.
 - Never touch code, branches, or PRs — this skill only writes issues.
