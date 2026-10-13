@@ -62,7 +62,7 @@ Summarize per `Gates` above, then ask. Apply `--priority` and `--max` as the bat
 
 ### 3. Create — delegate to `create-issues`
 
-Load the **`create-issues`** skill and hand it the report as the source. It dedupes against open issues, classifies, and files `priority:*` issues. Capture the created-issue table.
+Load the **`create-issues`** skill and hand it the report as the source. It dedupes against open issues, clusters related findings into one issue per root cause, classifies, and files `priority:*` issues. Capture the created-issue table plus the findings→issues collapse.
 
 If `--depth file`: stop. Report the issues filed and the exact `/fix-issues` command to continue.
 
@@ -105,7 +105,7 @@ End with one cycle summary:
 
 - scope scanned and coverage
 - findings: `N` (H/M/L), by category
-- issues filed: list (`#n`, priority, title, URL) or "none"
+- issues filed: list (`#n`, priority, title, URL, cluster size) or "none", with the findings→issues ratio
 - PRs opened: stack top-to-bottom (`#n`, branch, URL) or "not run"
 - PR reviews: per PR, findings by severity and comments posted, or "not run"
 - what was skipped and why, plus the next command to continue
