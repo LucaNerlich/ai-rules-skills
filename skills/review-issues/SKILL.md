@@ -18,6 +18,8 @@ find-problems → create-issues → fix-issues → review-issues
 
 This skill **reviews and posts comments only**. It never pushes code or merges. Fixes happen from the pasted instruction or a later `/fix-issues` run.
 
+Practical how-to — picking the PR set, the two handoff lists, dedupe, watch mode, troubleshooting: [`references/usage.md`](references/usage.md).
+
 ## Fresh context — mandatory
 
 A review must run in a context that did **not** write the code. For each PR, spawn a subagent (general/coding agent) with the diff, the linked issue, and the repo conventions — not this chat's history. Never review as the author. The subagent reads the surrounding code, not just the diff.

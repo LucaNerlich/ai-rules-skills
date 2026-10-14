@@ -14,7 +14,8 @@ find-problems  →  /create-issues  →  /fix-issues  →  /review-issues
                      issues)            PR chain)        + agent instructions)
 ```
 
-Run the whole chain in one command with `/sweep`.
+Run the whole chain in one command with `/sweep`. Practical how-to — scoping a run, sizing the
+fan-out, reading the report, Ponytail passes, troubleshooting: [`references/usage.md`](references/usage.md).
 
 This skill **reports only**. It never edits code, files issues, or opens PRs — `/create-issues` does that from the report.
 

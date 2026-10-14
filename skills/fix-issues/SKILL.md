@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Take the prioritized backlog produced by `/create-issues` and fix it, highest priority first. Every fix lands as one layer in a **stacked PR chain** built with `gh stack` (the [gh-stack](https://github.com/github/gh-stack) CLI extension): the highest-priority fix sits at the bottom of the stack (base = trunk), and each later fix stacks on top of the one below it. Related issues are grouped into one layer and a long batch is split into several independent stacks — both decided with the user, never silently. Run the whole chain in one command with `/sweep`.
 
+Practical how-to — worked stack examples, multi-stack splitting, on-layer review fixes, `Fixes` vs `Refs`, gh-stack gotchas: [`references/usage.md`](references/usage.md).
+
 ## Priority order (shared contract)
 
 Work `priority:high` → `priority:medium` → `priority:low`. Within a priority, cheapest `effort` first (from the issue's metadata comment), then oldest. Never start a lower priority while an in-scope higher-priority issue is unresolved, unless the user explicitly reorders.

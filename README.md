@@ -30,6 +30,10 @@ Each phase is also a skill (and a `/command`) of its own; `/sweep --depth report
 stops where you want. The skills live in [`skills/`](skills/), the slash-command wrappers in
 [`commands/`](commands/).
 
+Every skill has a practical guide next to it — `skills/<name>/references/usage.md` — with recipes,
+worked examples, and troubleshooting. `SKILL.md` is the contract; `usage.md` is the walkthrough.
+Both ship to every harness via `install.sh`.
+
 Anti-sprawl controls, all confirmed with you at their gate rather than chosen silently:
 
 | Flag | Effect |

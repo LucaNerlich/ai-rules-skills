@@ -24,6 +24,8 @@ Sweep is a **thin coordinator**. It delegates every phase to its skill and hands
 
 ## Invoking sweep
 
+Practical how-to — recipes, depths, resuming, troubleshooting: [`references/usage.md`](references/usage.md). Read it before a first run; this file is the contract, that file is the walkthrough.
+
 `/sweep` is a thin **command wrapper** that loads this skill (see [`commands/`](../commands/)); the chain also works by invoking each child skill directly. In a harness where the skill is not exposed, run `/sweep` from `commands/sweep.md` or open `skills/sweep/SKILL.md` and follow it. Install or refresh the wrappers for every harness on the machine with `./install.sh` (`./install.sh --check` reports drift).
 
 ## Arguments

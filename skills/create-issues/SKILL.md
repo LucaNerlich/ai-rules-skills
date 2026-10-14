@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog that `/fix-issues` consumes, highest priority first. Run the whole chain in one command with `/sweep`.
 
+Practical how-to — sources, the grouping levels, rollups, labels, dedupe behaviour, troubleshooting: [`references/usage.md`](references/usage.md).
+
 ## Priority labels (shared contract)
 
 | Label | Use for |
