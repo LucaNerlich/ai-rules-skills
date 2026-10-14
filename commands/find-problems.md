@@ -1,6 +1,6 @@
 ---
 description: Scan a codebase module-by-module with parallel subagents and produce an evidence-backed findings report (read-only)
-argument-hint: "[scope...]"
+argument-hint: "[path|module|feature ...]"
 ---
 
 Load and follow the **`find-problems`** skill exactly as written.

@@ -37,9 +37,19 @@ When they are absent, follow `references/ponytail.md` directly. Either way, **ev
 
 **Before spawning subagents, read `references/ponytail.md` (it sits beside this SKILL.md) and paste its contents into every subagent prompt.** A subagent starts with fresh context and does not inherit the plugin's always-on injection, so the ruleset must travel in the prompt.
 
+## 0. Scope (optional)
+
+A caller may hand you a scope — a path, a module name, or a feature term. With no scope, scan the whole repo (the default).
+
+- a **path** → only modules under it
+- a **module name** → that module (and its submodules/packages)
+- a **feature term** → resolve it first: search source, directory names, and config for the name, collect the paths it actually names, print them, and confirm before scanning. If it resolves to nothing, or to the whole repo, **stop and ask** — never widen a one-module run into a repo-wide scan
+
+Record the scope and, in the report, the paths covered and what was left out.
+
 ## 1. Map the modules
 
-Identify the real module boundaries (not just top-level folders): read the build files (`settings.gradle`, `pom.xml`, `package.json` workspaces, `go.mod`, `Cargo.toml`), package manifests, and directory layout. Write down, per module:
+Identify the real module boundaries (not just top-level folders): read the build files (`settings.gradle`, `pom.xml`, `package.json` workspaces, `go.mod`, `Cargo.toml`), package manifests, and directory layout. When a scope is set, map only modules inside it. Write down, per module:
 
 - name and root path
 - one-line responsibility
@@ -143,7 +153,7 @@ Emit the consolidated findings in the exact block format from step 2, grouped by
 
 - a summary table: priority, title, module, `file:line`, category, cluster, effort
 - counts per priority, per category, per module
-- a one-line coverage note
+- the scope covered (paths and modules) or "whole repo", and a one-line coverage note, including what the scope left out
 - the cluster keys present, so the reader sees how many issues `/create-issues` will file
 
 State the next step explicitly: **"Hand this report to `/create-issues`."** The report is the input `/create-issues` consumes; it does not need to be filed by this skill.
@@ -151,6 +161,7 @@ State the next step explicitly: **"Hand this report to `/create-issues`."** The 
 ## Rules
 
 - Read-only. No edits, no issues, no commits.
+- Stay inside the scope. A real problem outside it is not part of this report — note it once as out of scope, do not pad the report with it, and never widen the scan to include it.
 - Every finding needs evidence: a `file:line` reference or a command output. No speculation presented as fact — use `confidence: speculative` when you could not verify.
 - Report the mechanism, not the title: every finding names its `trigger`, `root cause`, and `blast radius` in one line each. A block that only restates the title is not a finding.
 - One `cluster` key per shared pattern, identical across modules, never prefixed with the module name. Same key ⇒ same issue. Unifying a key never drops a location.

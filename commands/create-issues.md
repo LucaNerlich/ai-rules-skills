@@ -1,6 +1,6 @@
 ---
 description: Turn findings into clustered, evidence-backed GitHub issues labelled priority:high|medium|low
-argument-hint: "[source: report path, PR/issue URL, or nothing to scan] [--issue-grouping recommended|coarse|strict] [--include-speculative]"
+argument-hint: "[source: report path, PR/issue URL, or nothing to scan] [--scope path|module|feature] [--issue-grouping recommended|coarse|strict] [--include-speculative]"
 ---
 
 Load and follow the **`create-issues`** skill exactly as written.

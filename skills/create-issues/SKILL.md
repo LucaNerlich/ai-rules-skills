@@ -18,6 +18,14 @@ Turn a set of findings into well-scoped GitHub issues, each carrying exactly one
 
 `/fix-issues` orders by these exact strings. Do not rename them.
 
+## Arguments
+
+| Arg | Meaning | Default |
+| --- | --- | --- |
+| `--scope <path\|module\|feature>` | file only findings inside the scope; stamp it in the body | none (every finding) |
+| `--issue-grouping` | `recommended` · `coarse` · `strict` | `recommended` |
+| `--include-speculative` | file `confidence: speculative` findings too | off |
+
 ## Preconditions
 
 Run and stop with a clear message if any fails:
@@ -45,6 +53,8 @@ When scanning, only keep concrete, evidenced work — never invent issues:
 - dead code, unused dependencies, deprecated patterns
 
 Every candidate needs evidence: a `file:line` reference, a command output, or a quoted report line. Drop anything you cannot point at.
+
+When a scope is given, drop every finding whose locations fall outside it — a scoped run files scoped issues, not repo-wide ones. Do not re-resolve the scope; the caller already did, and if a location sits outside it, say so in the skipped list rather than filing it anyway.
 
 ## 2. Dedupe against open and closed issues
 
@@ -198,7 +208,7 @@ Optional. Risk of the change, migration or compatibility notes, and how to rever
 ## Related
 Optional. `Related to #123` / `Part of #456` when the issue sits beside a distinct one.
 
-<!-- sweep-run:<id> cluster:<key> -->
+<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->
 <!-- metadata, keep for /fix-issues: category: <bug|security|refactor|over-engineering|
 dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely> -->
 ````
@@ -225,7 +235,7 @@ gh label create "priority:low"    --color 0E8A16 --force
 gh label create "sweep"           --color 1D76DB --force
 ```
 
-`--force` makes label creation idempotent. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither) and report the exact commands a maintainer must run. Never let a missing label cost you the issue. If the caller passed no run id, mint `sweep-YYYYMMDD-HHMM` and print it — every body still gets `<!-- sweep-run:<id> cluster:<key> -->`.
+`--force` makes label creation idempotent. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither) and report the exact commands a maintainer must run. Never let a missing label cost you the issue. If the caller passed no run id, mint `sweep-YYYYMMDD-HHMM` and print it — every body still gets `<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->`, with `scope:repo` when none was given.
 
 Create issues one at a time so each returned URL is captured:
 
@@ -250,6 +260,6 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 - Exactly one priority label per issue; a cluster takes its highest member's priority.
 - Ask the grouping level once, and only when this skill was invoked on its own. Sweep's answer is final.
 - Never file `confidence: speculative` unless the user opted in after seeing it.
-- Stamp every body with `<!-- sweep-run:<id> cluster:<key> -->`. That marker is how a later run resumes this batch and no other.
+- Stamp every body with `<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->`. That marker is how a later run resumes this batch, and how `fix-issues` picks a scoped batch.
 - Offer a rollup for a long tail of same-kind nits instead of a river of near-identical issues.
 - Never touch code, branches, or PRs — this skill only writes issues.

@@ -24,7 +24,9 @@ The stack is built **bottom-to-top in the order you fix**: highest priority at t
 | `--max-layers` | max layers per stack before splitting into another stack | `5` |
 | `--stacks` | `auto` · `by-module` · `by-priority` · `<n>` | `auto` |
 | `--priority` | lowest priority to work | `low` |
+| `--scope` | take only issues whose body carries this `scope:` marker | none (every issue) |
 | `--max` | cap on issues taken this run | all |
+| `--resume <id>` | take only issues stamped `sweep-run:<id>` | none |
 
 `--pr-grouping` is PR grouping only. Issue grouping already happened in `/create-issues`; do not fold those issues again unless the user picked `coarse` here.
 
@@ -53,6 +55,7 @@ gh issue list --state open --label "priority:high" --json number,title,labels,bo
 Scope:
 
 - Sweep passed a run id → fix only issues whose body contains `sweep-run:<id>`. Do not pull in the rest of the backlog.
+- A `--scope` was passed → take only issues whose body contains `scope:<scope>`. A scoped run must not fix a single line outside it, even when the issue is otherwise in scope by priority.
 - User named issue numbers → fix exactly those, layered in the order given (or ascending issue number).
 - User said "work the backlog", or named a priority or a maximum count → respect it, still excluding `sweep:blocked` unless they asked to retry those.
 - Otherwise propose the next batch (default: all in-scope `priority:high`) as part of the step 2c question. Do not confirm the list here and again there.
