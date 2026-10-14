@@ -14,15 +14,16 @@ that already exists, so a renamed or uninstalled harness is skipped rather than 
 
 ## Sweep — the problem pipeline
 
-One command runs the whole cycle, and the last step makes it a loop:
+One command runs the whole cycle. A review finding in the fix goes back onto that layer; only a new bug becomes another issue:
 
 ```
 /sweep
   ├─ find-problems   → findings report                              (read-only)
   ├─ create-issues   → priority:high|medium|low issues                     [gate]
-  ├─ fix-issues      → stacked PR chain (gh-stack)                         [gate]
+  ├─ fix-issues      → file-disjoint stacked PR chains (gh-stack)          [gate]
   ├─ review-issues   → PR review comments + agent instructions             [gate]
-  └─ create-issues   → re-file unresolved review findings → next /fix-issues pass
+  ├─ on-layer finding → commit on that layer, never a new stack
+  └─ out-of-scope finding → create-issues → next /fix-issues pass
 ```
 
 Each phase is also a skill (and a `/command`) of its own; `/sweep --depth report|file|fix|review`
@@ -33,10 +34,13 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 
 | Flag | Effect |
 | --- | --- |
-| `--grouping recommended\|coarse\|strict` | how aggressively related findings become one issue, and issues one PR |
-| `--max-layers N` | cap layers per stack (default 5) before `/fix-issues` splits into another stack |
-| `--stacks auto\|by-module\|by-priority\|N` | how a long batch is split into independent stacks |
+| `--issue-grouping recommended\|coarse\|strict` | how findings become issues. Asked once, at the file gate |
+| `--pr-grouping recommended\|strict\|coarse` | how issues become PRs. A separate knob — `coarse` on both double-folds |
+| `--max-layers N` | cap layers per stack (default 5). Overlap past the cap stays one stack |
+| `--stacks auto\|by-module\|by-priority\|N` | how a long batch is split. Stacks share no files |
 | `--max N` | cap issues filed / fixed (counts issues, never cuts a cluster in half) |
+| `--include-speculative` | also file `confidence: speculative` findings (off by default) |
+| `--fix-on-layer` | commit review fixes onto the open layer instead of leaving the comment |
 
 - https://cursor.com/docs/context/skills
 - https://vercel.com/blog/introducing-react-best-practices

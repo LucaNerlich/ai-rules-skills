@@ -45,7 +45,7 @@ Identify the real module boundaries (not just top-level folders): read the build
 - one-line responsibility
 - approximate size (files / LOC)
 
-Group tiny modules together, and split a module that is too large to reason about in one pass (by subpackage). The unit is whatever makes one subagent's job coherent — **module boundaries are the default, not a rule**.
+Group tiny modules together, and split a module that is too large to reason about in one pass (by subpackage). Skip generated and vendor trees (`build/`, `node_modules/`, `.gradle/`, `dist/`, vendored third-party). The unit is whatever makes one subagent's job coherent — **module boundaries are the default, not a rule**.
 
 ## 2. Fan out one subagent per module
 
@@ -86,8 +86,8 @@ Output EXACTLY one block per finding. One line per field — real detail, never 
 - location: <path>:<line>  (add more lines if the issue spans several)
 - category: bug | security | refactor | over-engineering | dead-code | test-gap | perf
 - suggested priority: high | medium | low
-- cluster: <short key naming the shared pattern, e.g. "unchecked-presign-key"> — findings
-  that share a key are the same root cause and must be filed as ONE issue by /create-issues
+- cluster: <pattern key, e.g. "unchecked-presign-key"> — the pattern ONLY, never a module
+  prefix. Identical keys across modules are one issue; a module-prefixed key defeats that
 - root cause: <the underlying mistake, not the symptom; for a repeated pattern, why it recurs
   (missing shared helper, wrong default, inconsistent contract, copy-paste)>
 - trigger: <the input, state, or sequence that reaches the defect — every request, a specific
@@ -130,8 +130,9 @@ In addition to the per-module sweep:
 
 Merge the subagent reports, then:
 
-- Dedupe by concept, not wording (the same root cause found in two modules is one finding).
-- Align `cluster` keys: the same pattern found in several modules must share one key so `/create-issues` files it once. Split a key only when the fix genuinely differs.
+- Align `cluster` keys across modules: the same pattern must share one key, and the key must not contain the module name. Split a key only when the fix genuinely differs.
+- Keep every location. Unifying a key does **not** delete a finding or its `location` — `/create-issues` is what collapses same-key blocks into one issue. Dropping the second module's line here loses the instance forever.
+- Keep `confidence: speculative` findings in the report, clearly tagged. `/create-issues` excludes them unless the user opted in; deleting them here hides that choice.
 - Drop anything without a `location`, and anything purely cosmetic with no impact.
 - Rank by `suggested priority`, then by impact-to-effort (cheap high-impact fixes first).
 - Note coverage: which modules were scanned, which were skipped and why, and any low-confidence areas this leaves unverified.
@@ -152,7 +153,7 @@ State the next step explicitly: **"Hand this report to `/create-issues`."** The 
 - Read-only. No edits, no issues, no commits.
 - Every finding needs evidence: a `file:line` reference or a command output. No speculation presented as fact — use `confidence: speculative` when you could not verify.
 - Report the mechanism, not the title: every finding names its `trigger`, `root cause`, and `blast radius` in one line each. A block that only restates the title is not a finding.
-- One `cluster` key per shared pattern, identical across modules. Same key ⇒ same issue.
+- One `cluster` key per shared pattern, identical across modules, never prefixed with the module name. Same key ⇒ same issue. Unifying a key never drops a location.
 - Prefer a few high-signal findings over a nit dump.
 - Correctness before leanness: never propose a leaner change that removes validation at trust boundaries, error handling that prevents data loss, security, accessibility, concurrency safety, or resource cleanup.
 - Ponytail is mandatory for every finding and every suggested fix.

@@ -46,7 +46,7 @@ When scanning, only keep concrete, evidenced work — never invent issues:
 
 Every candidate needs evidence: a `file:line` reference, a command output, or a quoted report line. Drop anything you cannot point at.
 
-## 2. Dedupe against open issues
+## 2. Dedupe against open and closed issues
 
 Search before drafting — **open and closed**, so a regression of a fixed issue is a deliberate new issue linked to the old one, never a blind duplicate:
 
@@ -96,17 +96,20 @@ Related-but-distinct issues stay distinct and reference each other in the body (
 
 Many low-priority findings of the same kind (a typo pattern, a naming inconsistency, twelve missing docstrings) must **not** become twelve issues. File **one rollup issue** per kind and area, title `<Kind> in <area> (N items)`, with each instance as a checkbox under `### Where`. Rollups are `priority:low` as a whole unless one instance is genuinely higher, in which case that instance gets its own issue and the rest stay in the rollup.
 
-### Confirm the grouping with the user
-
-Before creating anything, present the clustered set and let the user pick how coarse it is — do not choose silently:
+### Confirm the grouping — once, and only if nobody already did
 
 | Level | Result |
 | --- | --- |
 | `recommended` (default) | one issue per root cause, plus rollups for the long tail |
-| `coarse` | fold clusters that share a module/fix surface into one issue with sub-checklists — fewer, larger issues (pairs well with a coarse stack in `/fix-issues`) |
+| `coarse` | fold clusters that share a module/fix surface into one issue with sub-checklists — fewer, larger issues |
 | `strict` | one issue per finding instance (only when the user asks) |
 
-Ask with the recommendation first, show the collapse (`N findings → M issues`) and the cluster sizes, and note that `coarse` trades issue noise for bigger tickets — `/fix-issues` will then build bigger, fewer PRs.
+This is **issue** grouping (`--issue-grouping`). It does not decide PR grouping; `/fix-issues` asks that separately, and passing `coarse` into both double-folds.
+
+- Invoked from `/sweep` with a level and an approved batch → do not ask. Use what sweep passed.
+- Invoked on its own → ask **once**, in the same question as the create go-ahead (step 7). Do not ask here and again there.
+
+Drop every finding with `confidence: speculative` unless the caller passed `--include-speculative` or the user, after seeing the list, asked to file them. List the dropped ones under skipped. A `file:line` is not enough to file a guess.
 
 ## 4. Classify
 
@@ -195,8 +198,9 @@ Optional. Risk of the change, migration or compatibility notes, and how to rever
 ## Related
 Optional. `Related to #123` / `Part of #456` when the issue sits beside a distinct one.
 
+<!-- sweep-run:<id> cluster:<key> -->
 <!-- metadata, keep for /fix-issues: category: <bug|security|refactor|over-engineering|
-dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely|speculative> -->
+dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely> -->
 ````
 
 Rules for bodies:
@@ -210,20 +214,23 @@ Rules for bodies:
 
 ## 7. Show the batch, then create
 
-Present a table first — priority, title, evidence, **findings folded in (cluster size)** — and get the user's go-ahead unless they already said "create them" / "just file them". State the collapse: "N findings → M issues". Then ensure the labels exist and create the issues:
+Present one table — priority, title, evidence, cluster size, collapse (`N findings → M issues`) — and, if this skill was invoked on its own, ask **once** for the grouping level and the go-ahead together. If `/sweep` already approved filing, create without asking. A "just file them" said before the table was shown does not skip the question; an approval after the table does.
+
+Then ensure the labels exist and create the issues:
 
 ```
 gh label create "priority:high"   --color B60205 --force
 gh label create "priority:medium" --color D93F0B --force
 gh label create "priority:low"    --color 0E8A16 --force
+gh label create "sweep"           --color 1D76DB --force
 ```
 
-`--force` makes label creation idempotent. If a `gh label create` fails (no label permission on the repo), do not abort the run: file the issues **without** `--label`, then report the missing labels and the exact commands for a maintainer to run. Never let a missing label cost you the issue.
+`--force` makes label creation idempotent. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither) and report the exact commands a maintainer must run. Never let a missing label cost you the issue. If the caller passed no run id, mint `sweep-YYYYMMDD-HHMM` and print it — every body still gets `<!-- sweep-run:<id> cluster:<key> -->`.
 
 Create issues one at a time so each returned URL is captured:
 
 ```
-gh issue create --title "<title>" --label "priority:<p>" --body-file - <<'EOF'
+gh issue create --title "<title>" --label "priority:<p>,sweep" --body-file - <<'EOF'
 <body>
 EOF
 ```
@@ -241,5 +248,8 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 - Write the mechanism, not the symptom: verify the cited code (read-only), state input → wrong outcome → root cause, and give a concrete `Suggested fix`. A thin body is a bug in this skill.
 - Detail is mechanism and reproduction, never filler. Do not pad, repeat evidence, or speculate beyond what you verified.
 - Exactly one priority label per issue; a cluster takes its highest member's priority.
-- Ask the grouping level (`recommended` / `coarse` / `strict`) before creating, and offer a rollup for a long tail of same-kind nits instead of filing a river of near-identical issues. The grouping you choose here decides how `/fix-issues` groups PRs.
+- Ask the grouping level once, and only when this skill was invoked on its own. Sweep's answer is final.
+- Never file `confidence: speculative` unless the user opted in after seeing it.
+- Stamp every body with `<!-- sweep-run:<id> cluster:<key> -->`. That marker is how a later run resumes this batch and no other.
+- Offer a rollup for a long tail of same-kind nits instead of a river of near-identical issues.
 - Never touch code, branches, or PRs — this skill only writes issues.

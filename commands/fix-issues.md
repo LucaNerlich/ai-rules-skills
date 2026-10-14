@@ -1,6 +1,6 @@
 ---
 description: Fix the priority-labelled backlog as a gh-stack stacked PR chain
-argument-hint: "[issue numbers...] [--priority high|medium|low] [--max N] [--grouping recommended|coarse|strict] [--max-layers N] [--stacks auto|by-module|by-priority|N]"
+argument-hint: "[issue numbers...] [--priority high|medium|low] [--max N] [--pr-grouping recommended|strict|coarse] [--max-layers N] [--stacks auto|by-module|by-priority|N] [--resume sweep-id]"
 ---
 
 Load and follow the **`fix-issues`** skill exactly as written.
