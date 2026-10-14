@@ -80,6 +80,7 @@ Searches open **and** closed issues.
 | Far fewer issues than findings | clustering + rollups did their job | read the "N findings → M issues" line in the report |
 | A finding you wanted is missing | speculative, or outside `--scope` | `--include-speculative`, or widen the scope |
 | Issues created without labels | label creation was denied | run the printed `gh label create` commands |
+| Nothing filed | nothing cleared the bar, or the verdict was `CLEAN` | correct outcome — an empty batch is a valid result, not a failed run |
 | Duplicate filed anyway | titles differed but the concept matched | say so; the search matched on wording, not the root cause |
 | Bodies look thin | the finding came from a scan that skipped the code read | re-run with the report from `/find-problems`, which carries the mechanism |
 

@@ -24,6 +24,15 @@ Practical how-to — picking the PR set, the two handoff lists, dedupe, watch mo
 
 A review must run in a context that did **not** write the code. For each PR, spawn a subagent (general/coding agent) with the diff, the linked issue, and the repo conventions — not this chat's history. Never review as the author. The subagent reads the surrounding code, not just the diff.
 
+## A clean PR is a review result
+
+A reviewer asked to find problems always finds some, and that pull is how a good PR collects a page of nits. Resist it: the verdict `Looks good` is a real, expected outcome, and `0 findings` is not a failure to review.
+
+- Post nothing rather than something weak. Do not pad a verdict with `nit`s to look thorough.
+- A `nit` must still be a defect or a real clarity win. **Preference is not a finding**: naming you would do differently, formatting, ordering, "consider extracting this", "could be more generic", or an alternative design that is simply another way to do it. Those go in the PR conversation at most, never as a formal finding with an agent instruction.
+- Never promote a `nit` or `minor` to `major` to make the review look valuable.
+- If the diff is genuinely fine, say so and stop. That is the review.
+
 ## 1. Find the PRs
 
 Pick the target set:
@@ -74,6 +83,10 @@ Read the diff AND the surrounding code it touches; trace the real flow. Check, i
    single-implementation abstractions, avoidable deps. Correctness outranks leanness.
 
 For every finding, verify it against the code before reporting — do not post a hunch.
+Reporting zero findings is a valid result: if the change is correct and clear, return
+"No findings. Looks good." and nothing else. Never pad the list with `nit`s, and never
+report a matter of taste — naming, formatting, ordering, "consider extracting", "could
+be more generic" — as a finding. A `nit` must still be a defect or a real clarity win.
 Output one block per finding:
 
 ### <imperative title>
@@ -84,7 +97,7 @@ Output one block per finding:
 - suggested fix: <the leanest correct change>
 - confidence: confirmed | likely | unverified
 
-End with: "PR #<n>: <N> findings (B/M/m/n)."
+End with: "PR #<n>: <N> findings (B/M/m/n)." — or "PR #<n>: No findings. Looks good." when N is 0.
 ```
 
 ## 4. Post each finding as a comment
@@ -152,7 +165,7 @@ After the per-finding comments, leave one summary review (you cannot approve or 
 gh pr review <n> --comment --body "<summary>"
 ```
 
-Summary: `blocker`/`major`/`minor`/`nit` counts, whether anything blocks merge, and a one-line verdict (`Blocked` if any blocker, else `Concerns` or `Looks good`).
+Summary: `blocker`/`major`/`minor`/`nit` counts, whether anything blocks merge, and a one-line verdict (`Blocked` if any blocker, else `Concerns` or `Looks good`). `Looks good` with nothing posted is a complete review — post the verdict and move on; do not go back for findings.
 
 ## 6. Report
 
@@ -188,6 +201,7 @@ To watch an open stack, run this on a loop (`/loop 10m /review-issues --stack`).
 - Every comment ends with a verify-first agent instruction inside a fenced block — that block is the copy button. Do not put the instruction in prose or a table.
 - The instruction must tell the receiving agent to verify before acting, and what to do if the finding does not hold.
 - Evidence required. Unverified hunches are posted only as `confidence: unverified` and never as `blocker`.
+- A clean PR is a result. Post nothing rather than a weak finding, never pad with `nit`s, and never raise severity to look valuable.
 - Dedupe by fingerprint; never repost. Fingerprint on `path + normalized title` (never the line number — rebases move it). Do not re-raise a finding a human already dismissed.
 - End every pass with both handoff lists. On-layer findings stay on that PR (a comment, or a later commit on the branch). Only out-of-scope findings go to `/create-issues`. Group those, and roll up same-kind nits, so a review does not become a river of issues.
 - Review only — no pushes, no merges, no label changes.

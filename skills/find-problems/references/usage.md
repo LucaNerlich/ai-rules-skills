@@ -27,6 +27,27 @@ stops a cross-cutting bug from being filed three times.
 `confidence: speculative` findings are kept in the report so you can see them, and are not filed
 unless you opt in. That is a feature, not a gap.
 
+## `CLEAN` is a result
+
+The scan answers "is anything actually wrong here?", not "what can be said about this code?". A
+module — or a whole report — can come back `CLEAN`, and that is a success, not a failed scan.
+
+The report says so explicitly:
+
+```
+Verdict: CLEAN — nothing to file. Ship.
+```
+
+If you see that, there is nothing to hand to `/create-issues`, and `/sweep` stops there. Do not
+widen the scope and scan again unless you actually want a different answer.
+
+The bar a finding has to clear: it is a real defect, a security/data/concurrency risk, or
+something that measurably removes complexity a reader is already paying for — and you can name
+the input or state that triggers it. Everything else is not a finding, including: taste
+(naming, formatting, "I'd write it differently"), "could be more generic/extensible", an
+abstraction debate, a trivial test gap, doc polish, and a trade-off the code already names with a
+`ponytail:` marker.
+
 ## How big a run is
 
 One subagent per module, a handful per wave. Modules come from the build files, not the folder

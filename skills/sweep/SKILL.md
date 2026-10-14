@@ -70,7 +70,7 @@ Sweep owns the questions. When it calls a child, it passes the answers already c
 
 Four checkpoints. `--yes` skips the question and uses the flag values; it does not change what those values mean.
 
-- **After the report:** show the summary (resolved scope, counts per priority and category, modules covered, top findings, speculative excluded) and ask **once**: file these, and at which `--issue-grouping`? On no → print the report and stop; the run is complete at `depth=report`.
+- **After the report:** if the verdict is `CLEAN`, report it and **stop the run** — do not open issues, fix, or review to justify the scan. Otherwise show the summary (resolved scope, counts per priority and category, modules covered, top findings, speculative excluded) and ask **once**: file these, and at which `--issue-grouping`? On no → print the report and stop; the run is complete at `depth=report`.
 - **Before fixing:** show the **stack plan** — layers, which issues share a PR, and the file-disjoint split — and ask **once** about `--pr-grouping`, stack count/size, and the batch. On no → stop after filing; the run is complete at `depth=file`. Reached at `depth=fix` and `depth=review`.
 - **Before reviewing:** show the PRs across **every** stack this run opened (not only the current `gh stack`) and ask whether to post comments. On no → stop; the run is complete at `depth=fix`. Only reached at `depth=review`.
 - **After reviewing:** split findings into on-layer and out-of-scope (below) and ask. On no → stop; the run is complete at `depth=review`.
@@ -102,6 +102,8 @@ Mint a run id, `sweep-YYYYMMDD-HHMM`, and pass it and the resolved scope to ever
 Load the **`find-problems`** skill and run it over the **resolved scope**. It scans module-by-module under the Ponytail lens and returns the findings report. Pass the scope so it maps only those modules and says what it left out. Do not re-scan or re-derive findings here.
 
 If `--depth report`: print the report and stop.
+
+If the report's verdict is `CLEAN`, the run is over: say so, file nothing, open nothing. This is a normal outcome, not a reason to widen the scope and scan again unless the user asks.
 
 ### 2. Gate — file?
 
@@ -187,6 +189,7 @@ End with one cycle summary:
 - `--issue-grouping` and `--pr-grouping` are different knobs. Do not pass one `coarse` into both unless the user set `--grouping`.
 - `--max` counts issues (post-clustering), never individual findings. Never cut a cluster in half.
 - Stacks are file-disjoint and capped at `--max-layers` (default 5). Never build a longer chain, and never a second stack that touches the same files, without the user raising the cap.
+- Never file an issue or open a PR to justify the run. A `CLEAN` report ends the cycle — zero findings is the expected result for code that is already fine.
 - Respect the scope in every phase: report, file, fix, review. A finding outside the scope is out of this run, not a finding.
 - Never widen a scope silently. If a term does not resolve, stop and ask — a narrow run must not quietly become a repo-wide one.
 - Respect the shared `priority:high|medium|low` contract across all phases.

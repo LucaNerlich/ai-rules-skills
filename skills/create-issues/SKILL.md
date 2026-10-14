@@ -47,7 +47,6 @@ Use the source the user named; otherwise infer one:
 - findings already present in this conversation
 
 When scanning, only keep concrete, evidenced work — never invent issues:
-
 - `TODO` / `FIXME` / `HACK` / `XXX` comments
 - failing or skipped tests (`@Disabled`, `it.skip`, `xit`, `t.Skip`)
 - build, lint, or type errors from the repo's own command
@@ -253,6 +252,7 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 
 ## Rules
 
+- An empty batch is a valid outcome. If nothing clears the bar, file nothing and say so — never file an issue to justify the run.
 - Never file an issue without evidence.
 - Never duplicate an open issue.
 - Cluster before drafting: one issue per root cause, not one per site. Merge repeated findings; split only for a named reason (different root cause, blast radius, or shipping).

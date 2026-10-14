@@ -89,6 +89,7 @@ is the sprawl you were trying to avoid — reach for it only for a tiny batch.
 | Symptom | Cause | Do |
 | --- | --- | --- |
 | "scope did not resolve" | feature term matched nothing | give a path or module name |
+| Files nothing, report says `CLEAN` | the code is fine | this is the correct outcome, not a failed run |
 | Files nothing, report looks fine | everything was duplicate or speculative | check the skipped list; `--include-speculative` to file guesses |
 | Fix gate shows fewer issues than filed | some were `sweep:blocked` | answer the question on that issue, then re-run |
 | Stacked PRs disabled | repo has no Stacked PRs | it asks; approve the plain-PR fallback or stop |
@@ -98,6 +99,7 @@ is the sprawl you were trying to avoid — reach for it only for a tiny batch.
 
 - Widen a scope you set.
 - File a guess (`confidence: speculative`) unless you asked.
+- Open anything to justify the run: a `CLEAN` report ends the cycle.
 - Build a stack longer than `--max-layers`, or a second stack touching the same files.
 - File a defect in one of its own PRs as a new issue — that goes back onto the layer.
 - Merge anything. Opening PRs is where it stops.

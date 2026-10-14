@@ -59,6 +59,17 @@ Every pass ends with:
 Both are grouped by fix surface, and a long tail of `nit`s is rolled up into one entry. A review
 that posts twelve comments must not become twelve issues.
 
+## A clean PR is a result
+
+`Looks good` with nothing posted is a complete review. A reviewer asked to find problems always
+finds some — that pull is how a good PR collects a page of nits and a `nit` becomes an issue and
+an issue becomes a PR.
+
+A `nit` still has to be a defect or a real clarity win. Preference is not a finding: naming you
+would do differently, formatting, "consider extracting this", "could be more generic", or an
+alternative design that is simply another way to do it. Those belong in the PR conversation at
+most, never as a finding with an agent instruction. And never raise a severity to look valuable.
+
 ## Watch mode
 
 ```
