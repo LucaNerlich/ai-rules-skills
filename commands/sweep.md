@@ -1,6 +1,6 @@
 ---
 description: Run the full sweep chain — scan for problems, file clustered issues, fix them as a stacked PR chain, review the PRs, and re-file the findings
-argument-hint: "[scope...] [--depth report|file|fix|review] [--priority high|medium|low] [--max N] [--yes]"
+argument-hint: "[scope...] [--depth report|file|fix|review] [--priority high|medium|low] [--max N] [--grouping recommended|coarse|strict] [--max-layers N] [--stacks auto|by-module|by-priority|N] [--yes]"
 ---
 
 Load and follow the **`sweep`** skill exactly as written.

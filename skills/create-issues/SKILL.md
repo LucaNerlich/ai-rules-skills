@@ -69,7 +69,7 @@ Cluster findings that share a **root cause**, a **fix**, or a **fix surface**. A
 - **Fix** — a single edit (or one small series of edits) resolves every instance.
 - **Fix surface** — the instances live in one module, file, or pattern the reviewer can verify together.
 
-When the source is a `/find-problems` report, its `cluster` key is the first grouping signal: identical keys are the same root cause and belong in one issue. Trust the key but verify it — split a cluster whose instances need different fixes.
+When the source is a `/find-problems` report, its `cluster` key is the first grouping signal: identical keys are the same root cause and belong in one issue. A `/review-issues` handoff carries a `group` key that plays the same role. Trust the key but verify it — split a cluster whose instances need different fixes.
 
 One cluster → one issue. The issue names the *pattern* as its title and lists every instance as evidence, so nothing is lost.
 
@@ -91,6 +91,22 @@ Size guide: a cluster is well-formed when its instances share one acceptance che
 Priority of a cluster = the **highest** priority among its members — one `high` instance lifts the whole issue, so it is never buried by its `low` siblings. Say so in the body when the mix is wide.
 
 Related-but-distinct issues stay distinct and reference each other in the body (`Related to #123` / `Part of #123` for a cluster of clusters). Cross-reference, never duplicate.
+
+### Rollup: the long tail of the same nit
+
+Many low-priority findings of the same kind (a typo pattern, a naming inconsistency, twelve missing docstrings) must **not** become twelve issues. File **one rollup issue** per kind and area, title `<Kind> in <area> (N items)`, with each instance as a checkbox under `### Where`. Rollups are `priority:low` as a whole unless one instance is genuinely higher, in which case that instance gets its own issue and the rest stay in the rollup.
+
+### Confirm the grouping with the user
+
+Before creating anything, present the clustered set and let the user pick how coarse it is — do not choose silently:
+
+| Level | Result |
+| --- | --- |
+| `recommended` (default) | one issue per root cause, plus rollups for the long tail |
+| `coarse` | fold clusters that share a module/fix surface into one issue with sub-checklists — fewer, larger issues (pairs well with a coarse stack in `/fix-issues`) |
+| `strict` | one issue per finding instance (only when the user asks) |
+
+Ask with the recommendation first, show the collapse (`N findings → M issues`) and the cluster sizes, and note that `coarse` trades issue noise for bigger tickets — `/fix-issues` will then build bigger, fewer PRs.
 
 ## 4. Classify
 
@@ -225,4 +241,5 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 - Write the mechanism, not the symptom: verify the cited code (read-only), state input → wrong outcome → root cause, and give a concrete `Suggested fix`. A thin body is a bug in this skill.
 - Detail is mechanism and reproduction, never filler. Do not pad, repeat evidence, or speculate beyond what you verified.
 - Exactly one priority label per issue; a cluster takes its highest member's priority.
+- Ask the grouping level (`recommended` / `coarse` / `strict`) before creating, and offer a rollup for a long tail of same-kind nits instead of filing a river of near-identical issues. The grouping you choose here decides how `/fix-issues` groups PRs.
 - Never touch code, branches, or PRs — this skill only writes issues.

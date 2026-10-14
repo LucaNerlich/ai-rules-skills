@@ -29,6 +29,15 @@ Each phase is also a skill (and a `/command`) of its own; `/sweep --depth report
 stops where you want. The skills live in [`skills/`](skills/), the slash-command wrappers in
 [`commands/`](commands/).
 
+Anti-sprawl controls, all confirmed with you at their gate rather than chosen silently:
+
+| Flag | Effect |
+| --- | --- |
+| `--grouping recommended\|coarse\|strict` | how aggressively related findings become one issue, and issues one PR |
+| `--max-layers N` | cap layers per stack (default 5) before `/fix-issues` splits into another stack |
+| `--stacks auto\|by-module\|by-priority\|N` | how a long batch is split into independent stacks |
+| `--max N` | cap issues filed / fixed (counts issues, never cuts a cluster in half) |
+
 - https://cursor.com/docs/context/skills
 - https://vercel.com/blog/introducing-react-best-practices
 - https://vercel.com/design/guidelines
