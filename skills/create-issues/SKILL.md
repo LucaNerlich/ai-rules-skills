@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Create Issues
 
-Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog that `/fix-issues` consumes, highest priority first. Run the whole chain in one command with `/sweep`.
+Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog that `/fix-issues` consumes, highest priority first. `/fix-issues` then mirrors each issue's labels onto the PR that closes it, keeping exactly one `priority:*` (the highest in the layer), so the same vocabulary filters the backlog and the PRs. Run the whole chain in one command with `/sweep`.
 
 Practical how-to — sources, the grouping levels, rollups, labels, dedupe behaviour, troubleshooting: [`references/usage.md`](references/usage.md).
 

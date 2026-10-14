@@ -32,6 +32,10 @@ Grouping signals: same module and same kind of defect; one edit satisfies all th
 criteria; or a rollup of same-kind low nits. Never grouped: a security/auth/billing/data fix with
 anything else, or issues whose verification differs.
 
+Each PR in the chain is labelled like the issues it closes — the union of their labels, with one
+`priority:*` (the highest in the layer) — so `gh pr list --label priority:medium` filters the PRs
+and the backlog the same way.
+
 ## More than one stack
 
 A chain longer than `--max-layers` (default 5) is not reviewable. Two stacks may both base on
@@ -96,6 +100,7 @@ medium and low work behind it. Re-run after answering the question on the issue.
 | Second stack will not merge | it shares files with the first | it should not have been a second stack; re-plan |
 | `checkout` never returns | you ran it with no argument | Ctrl-C, then pass a branch/PR/stack number |
 | Layer 3 needs a change from layer 1 | wrong layer | `gh stack down`, commit there, `gh stack rebase --upstack`, `gh stack top` |
+| PRs come out unlabelled | the label step was skipped, or label creation was denied | give each PR its layer's issue labels with one highest `priority:*` — `gh pr edit <n> --add-label "priority:medium,bug"` |
 
 ## What this skill will not do
 
@@ -103,3 +108,4 @@ medium and low work behind it. Re-run after answering the question on the issue.
 - Open a PR on a failing or unrun check.
 - Merge from the CLI — including `gh stack merge`, which exists and is deliberately unused.
 - Close an issue by hand when a keyword will.
+- Set the repo's workflow labels (`release candidate`, `work in progress`, `scheduled`) — those are yours to apply.

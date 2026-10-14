@@ -1,6 +1,6 @@
 ---
 name: fix-issues
-description: "Work through GitHub issues labelled priority:high, priority:medium, or priority:low, highest priority first, and land the fixes as file-disjoint stacked PR chains created with the gh-stack CLI extension. Plans the stack first and asks once about PR grouping and stack size, so it neither sprawls into one PR per issue nor builds a monster chain or a second stack that touches the same files. Review fixes land on the reviewed layer, not a new stack. Use for /fix-issues, \"fix the issues\", \"work the backlog\", \"fix the high priority issues\", or as the follow-up to /create-issues."
+description: "Work through GitHub issues labelled priority:high, priority:medium, or priority:low, highest priority first, and land the fixes as file-disjoint stacked PR chains created with the gh-stack CLI extension, each PR carrying the labels of the issues it fixes so the chain is filterable by priority. Plans the stack first and asks once about PR grouping and stack size, so it neither sprawls into one PR per issue nor builds a monster chain or a second stack that touches the same files. Review fixes land on the reviewed layer, not a new stack. Use for /fix-issues, \"fix the issues\", \"work the backlog\", \"fix the high priority issues\", or as the follow-up to /create-issues."
 disable-model-invocation: true
 ---
 
@@ -185,6 +185,17 @@ gh stack view --json
 
 Verify each chain with `gh stack view --json` and capture the PR URLs. If a PR body is missing a keyword, add the one the layer earned — `Fixes` only when the acceptance criteria are fully met, otherwise `Refs`: `gh pr edit <number> --body "<body>\n\nFixes #<n>"`.
 
+**Then label every PR.** An unlabelled PR is invisible to the reviewer who filters by priority or kind, and the chain is exactly where that filter matters most. Mirror the layer's issues rather than inventing vocabulary: take the union of the labels on the issues that layer closes, keep exactly one `priority:*` — the highest in the layer, matching how a grouped issue takes its highest member's priority — and leave the repo's own automation alone, since `--add-label` is additive:
+
+```
+gh label create "priority:high"   --color B60205 --force   # --force makes it idempotent
+gh label create "priority:medium" --color D93F0B --force
+gh label create "priority:low"    --color 0E8A16 --force
+gh pr edit <n> --add-label "priority:medium,bug"
+```
+
+A layer with no labelled issue — an on-layer review fix, or work the user asked for directly — gets the priority tier it was scheduled under and nothing else. The same tolerance as `/create-issues` applies: if a label cannot be created, apply the ones that exist, report it, and print the exact commands a maintainer must run. Never let a missing label cost the PR, and never set the repo's own workflow labels (`release candidate`, `work in progress`, `scheduled`) — those are the user's calls.
+
 ## 5. On-layer review fixes
 
 When `/sweep` or the user asks to fix review findings **on the layer**, this is not a new batch and not a new stack. Filing an issue and basing a stack on trunk forks the work off the PR that was reviewed.
@@ -236,6 +247,7 @@ End with a table per stack: stack, issue(s) in the layer, priority, layer (branc
 - Order layers bottom-to-top by priority, highest first.
 - Base the bottom layer of each stack on the repo's trunk; pass `--base <trunk>` when it is not the default branch.
 - gh-stack auto-generates PR titles and bodies — put `Fixes #<n>` or `Refs #<n>` in the commit body, or set them afterwards with `gh pr edit`. Never `Fixes` a partial.
+- **Label each PR like the issues it fixes** (step 4): the union of those issues' labels, with exactly one `priority:*` — the highest in the layer. Never invent label vocabulary, never set the repo's workflow labels, and never let a missing label cost the PR.
 - Never open a PR (or submit a stack) on a failing or unrun check.
 - Never force-push by hand, never merge from the CLI (open the PR URL to merge), and never close an issue by hand when `Fixes #<n>` will. gh-stack 0.2+ ships `gh stack merge` — this skill deliberately does not use it: merging stays a human action in the PR UI or merge queue.
 - A clustered issue is one layer even when its diff is larger than a nit's; a layer that cannot be verified in isolation is still fine in a stack, since upper PRs show the whole chain.
