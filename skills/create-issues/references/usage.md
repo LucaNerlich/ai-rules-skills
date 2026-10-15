@@ -42,9 +42,12 @@ Or copy `skills/<name>/` next to this skill's directory in your harness's skills
 ## Where findings come from
 
 Best source is a `/find-problems` report (an optional companion): it already has `evidence`, `root cause`, `trigger`,
-`blast radius`, `repro`, `suggested fix`, and `confidence`. A `/review-issues` handoff also works
-(severity maps to priority). A pasted plan or PR description works if it is specific enough to
-cite a `file:line`.
+`blast radius`, `repro`, `suggested fix`, and `confidence`. A `/review-issues` handoff also works,
+but only its **Out-of-scope findings** list is filed: its **On-layer findings** belong to an open
+PR's branch and are skipped as `on-layer, PR #n`, and dismissed findings never come back. Each
+entry keeps its `review-issues:` fingerprint, its `group` becomes the issue's cluster key, and
+severity maps to priority. A pasted plan or PR description works if it is specific enough to cite
+a `file:line`.
 
 If it cannot be pointed at, it is not an issue. That includes a `TODO` with no context.
 
@@ -56,8 +59,11 @@ If it cannot be pointed at, it is not an issue. That includes a `TODO` with no c
 | `coarse` | fold same-surface clusters into one issue with sub-checklists | you want a short backlog and are happy with bigger tickets |
 | `strict` | one issue per finding instance | a very small, high-stakes batch |
 
-The level is asked **once** — inside sweep at the file gate, or here when invoked directly. It is
-issue grouping only; `fix-issues` asks the PR-side question separately.
+The level is asked **once** — inside sweep at the file gate, or here when invoked directly, next
+to the drafted table built at `--issue-grouping` (default `recommended`). Pick another level there
+and the batch is rebuilt from the deduped findings, `--priority`/`--max` are reapplied, and the
+new table comes back for a go-ahead — what gets filed is always exactly the table you approved.
+It is issue grouping only; `fix-issues` asks the PR-side question separately.
 
 ## Rollups
 
@@ -79,7 +85,7 @@ Two footers are load-bearing:
 
 ```
 <!-- sweep-run:<id> scope:<token> cluster:<key> -->
-<!-- metadata, keep for /fix-issues: category: ... · effort: S|M|L · confidence: ... · scope-paths: ... -->
+<!-- metadata, keep for /fix-issues: category: ... · effort: S|M|L · confidence: ... · scope-paths: ... · fingerprints: ... -->
 ```
 
 The first is how a later run resumes this batch, how `fix-issues` picks a scoped batch, and how
@@ -92,7 +98,8 @@ nothing (`..`, `/`) is refused before anything is filed. The resolved paths live
 ## Labels
 
 Requires `priority:high|medium|low` plus `sweep`. Only missing labels are created, never with
-`--force`, so an existing label keeps its color and description. If you cannot create labels (no
+`--force`, so an existing label keeps its color and description. The label list is read in full
+before a label counts as missing. If you cannot create labels (no
 permission), the skill files with the labels that exist and prints two sets of commands for a
 maintainer: `gh label create` for each missing label, then `gh issue edit <n> --add-label` for
 each issue it filed without them. It will not abort.
@@ -106,7 +113,10 @@ the issue verbatim and nothing in it runs.
 
 ## Dedupe behaviour
 
-Searches open **and** closed issues, first for the same `cluster:<key>` marker, then by concept.
+Searches open **and** closed issues, first for the same `cluster:<key>` marker (and a review
+entry's fingerprint), then by concept. Every search is read to the end: a full page is re-run with
+a higher limit, and one that still fills its page or fails holds the finding back as `dedupe
+incomplete` and asks you — never "no match" from a partial list.
 
 - Open match → skipped, and the existing issue is named.
 - Closed as not planned → never re-filed; skipped as `rejected in #<n>`.
@@ -118,7 +128,8 @@ Searches open **and** closed issues, first for the same `cluster:<key>` marker, 
 | Symptom | Cause | Do |
 | --- | --- | --- |
 | Far fewer issues than findings | clustering + rollups did their job | read the "N findings → M issues" line in the report |
-| A finding you wanted is missing | speculative, outside `--scope`, below `--priority`, past `--max`, or rejected before | `--include-speculative`, widen the scope or caps; a `rejected in #n` finding stays rejected |
+| A finding you wanted is missing | speculative, outside `--scope`, below `--priority`, past `--max`, rejected before, or on-layer for an open PR | `--include-speculative`, widen the scope or caps; a `rejected in #n` finding stays rejected; an `on-layer, PR #n` finding is fixed on that PR's branch |
+| Asked about a `dedupe incomplete` finding | a search hit its result cap or failed, so a match could not be ruled out | narrow the terms or check the repo by hand, then say file or skip |
 | Issues created without labels | label creation was denied | run the printed recovery: `gh label create` for each missing label, then `gh issue edit <n> --repo <owner/repo> --add-label "priority:<p>,sweep"` for each listed issue — creating the labels alone leaves those issues unlabelled |
 | "scope is empty" / asked to name a scope | the scope slugified to nothing (`..`, `/`) | pass a path, module, or term; `.` means the whole repo |
 | Issues landed in the wrong repo | the target was not confirmed (fork vs upstream) | confirm the repo when asked; every `gh` call then names it with `--repo` |

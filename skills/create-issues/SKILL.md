@@ -49,7 +49,7 @@ Run and stop with a clear message if any fails:
 Use the source the user named; otherwise infer one:
 
 - the consolidated report from `/find-problems` (the recommended upstream — its per-finding `evidence`, `why it matters`, `suggested fix`, `category`, and `confidence` are the raw material for the detailed body you write in step 5)
-- the handoff block from `/review-issues` (PR findings with their `review-issues:<fingerprint>` markers) — so review findings re-enter the backlog and `/fix-issues` picks them up. Map severity to priority there: `blocker`/`major` → `priority:high`, `minor` → `priority:medium`, `nit` → `priority:low`
+- the **Out-of-scope findings** list from a `/review-issues` handoff — that list only. Its **On-layer findings** belong to an open PR's branch; filing them starts a competing fix stack, so skip them (`on-layer, PR #<n>` under skipped). Keep each entry's `review-issues:<fingerprint>` and `group` key. Take nothing from the PR's comments: the list already leaves out dismissed findings (a resolved thread or a maintainer's rejection), and they stay out. Map severity to priority: `blocker`/`major` → `priority:high`, `minor` → `priority:medium`, `nit` → `priority:low`
 - a review report, plan file, or PR/issue URL they pasted
 - a codebase scan (below)
 - findings already present in this conversation
@@ -71,11 +71,14 @@ Search before drafting — **open and closed**, so a regression of a fixed issue
 
 ```
 # $d/<i>.q1 holds: "cluster:<key>" in:body      $d/<i>.q2 holds: <key terms>
-gh issue list --repo "$R" --state all --search "$(cat "$d/<i>.q1")" --json number,title,state,stateReason,url
-gh issue list --repo "$R" --state all --search "$(cat "$d/<i>.q2")" --limit 20 --json number,title,state,stateReason,labels,url
+# a review entry also runs the q1 call with $d/<i>.q3: "review-issues:<fingerprint>" in:body
+gh issue list --repo "$R" --state all --search "$(cat "$d/<i>.q1")" --limit 100 --json number,title,state,stateReason,url
+gh issue list --repo "$R" --state all --search "$(cat "$d/<i>.q2")" --limit 100 --json number,title,state,stateReason,labels,url
 ```
 
-A prior issue carrying the same `cluster:<key>` marker is the strongest signal — the same root cause, already filed. Otherwise match on the concept, not the wording.
+Read every search to the end before concluding "no match". A call that returns exactly `--limit` rows may be cut off: raise the limit and re-run until it returns fewer (search stops at 1000). A search that fails, or still fills its page, is an incomplete check — hold that finding back, list it as `dedupe incomplete`, and ask before filing it. Never file on a partial answer.
+
+A prior issue carrying the same `cluster:<key>` marker, or a review entry's fingerprint, is the strongest signal — the same root cause, already filed. Otherwise match on the concept, not the wording.
 
 - An open issue covers it → skip it and name the issue that covers it.
 - A closed issue with `stateReason` `NOT_PLANNED` matches → never re-file; it was rejected. List it as skipped: `rejected in #<n>`.
@@ -91,7 +94,7 @@ Cluster findings that share a **root cause**, a **fix**, or a **fix surface**. A
 - **Fix** — a single edit (or one small series of edits) resolves every instance.
 - **Fix surface** — the instances live in one module, file, or pattern the reviewer can verify together.
 
-When the source is a `/find-problems` report, its `cluster` key is the first grouping signal: identical keys are the same root cause and belong in one issue. A `/review-issues` handoff carries a `group` key that plays the same role. Trust the key but verify it — split a cluster whose instances need different fixes.
+When the source is a `/find-problems` report, its `cluster` key is the first grouping signal: identical keys are the same root cause and belong in one issue. A `/review-issues` out-of-scope entry's `group` key plays the same role and becomes the issue's `cluster:<key>`. Trust the key but verify it — split a cluster whose instances need different fixes.
 
 One cluster → one issue. The issue names the *pattern* as its title and lists every instance as evidence, so nothing is lost.
 
@@ -129,7 +132,7 @@ Many low-priority findings of the same kind (a typo pattern, a naming inconsiste
 This is **issue** grouping (`--issue-grouping`). It does not decide PR grouping; `/fix-issues` asks that separately, and passing `coarse` into both double-folds.
 
 - Invoked from `/sweep` with a level and an approved batch → do not ask. Use what sweep passed.
-- Invoked on its own → ask **once**, in the same question as the create go-ahead (step 7). Do not ask here and again there.
+- Invoked on its own → build the batch at `--issue-grouping` (default `recommended`) and ask the level **once**, with the go-ahead in step 7, where the drafted table shows what it produces. Do not ask here too. A different level there rebuilds the batch (step 7); it is not asked again.
 
 Drop every finding with `confidence: speculative` unless the caller passed `--include-speculative` or the user, after seeing the list, asked to file them. List the dropped ones under skipped. A `file:line` is not enough to file a guess.
 
@@ -225,7 +228,8 @@ Optional. `Related to #123` / `Part of #456` when the issue sits beside a distin
 <!-- sweep-run:<id> scope:<token> cluster:<key> -->
 <!-- metadata, keep for /fix-issues: category: <bug|security|refactor|over-engineering|
 dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely> ·
-scope-paths: <resolved paths, or repo> -->
+scope-paths: <resolved paths, or repo> · fingerprints: <review-issues:<hash> per review
+entry, or N/A> -->
 ````
 
 Rules for bodies:
@@ -241,6 +245,8 @@ Rules for bodies:
 
 Present one table — priority, title, evidence, cluster size, collapse (`N findings → M issues`) — and, if this skill was invoked on its own, ask **once** for the grouping level and the go-ahead together. If `/sweep` already approved filing, create without asking. A "just file them" said before the table was shown does not skip the question; an approval after the table does.
 
+The approved table is exactly what gets filed. An answer that changes the batch — another grouping level, speculative findings opted in, a held finding cleared, new caps — makes the table stale: rebuild from the deduped candidates (step 2's output), redo steps 3–6, reapply `--priority` and `--max`, show the revised table, and ask only for the go-ahead. An unchanged level is never asked twice.
+
 Then ensure the labels exist — create only the missing ones — and create the issues:
 
 ```
@@ -251,7 +257,7 @@ gh label create "priority:low"    --repo "$R" --color 0E8A16
 gh label create "sweep"           --repo "$R" --color 1D76DB
 ```
 
-Never `--force`: it overwrites an existing label's color and description. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither). Never let a missing label cost you the issue. Then print the recovery a maintainer must run — creating the labels alone does not label issues already filed:
+Exactly 500 names back means the list may be cut off: raise `--limit` and re-list before calling a label missing. A create that fails because the label already exists means it is there — use it. Never `--force`: it overwrites an existing label's color and description. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither). Never let a missing label cost you the issue. Then print the recovery a maintainer must run — creating the labels alone does not label issues already filed:
 
 ```
 gh label create "<missing label>" --repo "$R" --color <color>      # each missing label
@@ -268,13 +274,14 @@ gh issue create --repo "$R" --title "$(cat "$d/<i>.title")" --label "priority:<p
 
 ## 8. Report
 
-Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; rejected → `rejected in #<n>`; merged → the issue that folded it in; below `--priority` or past `--max` → deferred). Give counts per priority and the raw-findings → issues ratio, plus any label-recovery commands from step 7. This table is the handoff to `/fix-issues` when it is installed.
+Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; rejected → `rejected in #<n>`; merged → the issue that folded it in; below `--priority` or past `--max` → deferred; `on-layer, PR #<n>`; `dedupe incomplete` → held until the user answers). Give counts per priority and the raw-findings → issues ratio, plus any label-recovery commands from step 7. This table is the handoff to `/fix-issues` when it is installed.
 
 ## Rules
 
 - An empty batch is a valid outcome. If nothing clears the bar, file nothing and say so — never file an issue to justify the run.
 - Never file an issue without evidence.
-- Never duplicate an open issue, and never re-file one closed as not planned.
+- Never duplicate an open issue, and never re-file one closed as not planned. "No match" and "label missing" need a complete list — a page that came back full, or a failed call, is not one; ask instead.
+- From a `/review-issues` handoff, file only the out-of-scope list, fingerprints and `group` keys kept. On-layer findings stay on their PR.
 - Cluster before drafting: one issue per root cause, not one per site. Merge repeated findings; split only for a named reason (different root cause, blast radius, or shipping).
 - Every instance of a cluster is listed in the issue; grouping never drops a finding.
 - Write the mechanism, not the symptom: verify the cited code (read-only), state input → wrong outcome → root cause, and give a concrete `Suggested fix`. A thin body is a bug in this skill.
@@ -284,6 +291,7 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 - Create only missing labels; never `gh label create --force`. When labels were missing, print both recovery steps: create the labels, then `gh issue edit --add-label` each issue filed without them.
 - Every `gh` call names the recorded repo (`--repo "$R"`). Titles, bodies, and search queries travel as files, never as shell source or heredocs.
 - Ask the grouping level once, and only when this skill was invoked on its own. Sweep's answer is final.
+- File exactly the table the user approved. An answer that changes the batch rebuilds it from the deduped candidates, reapplies the caps, and shows it again (step 7).
 - Never file `confidence: speculative` unless the user opted in after seeing it.
 - Stamp every body with `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`, never with an empty token. That marker is how a later run resumes this batch, how `fix-issues` picks a scoped batch (exact token match), and how a later dedupe finds this cluster.
 - Offer a rollup for a long tail of same-kind nits instead of a river of near-identical issues.
