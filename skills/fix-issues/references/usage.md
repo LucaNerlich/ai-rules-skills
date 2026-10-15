@@ -59,7 +59,8 @@ overflow. It will not be "split" onto trunk anyway.
 
 Issues close only when their PR merges, so a re-run still sees them open. An issue with an open
 PR that names it, or a `fix/<n>-*` branch (local or remote), is skipped and reported —
-`#14 — already in PR #31`. That is what keeps `--resume` and the follow-up `/fix-issues` after a
+`#14 — already in PR #31`. The PR list is read in full (a full page is re-listed with a higher
+limit), so a busy repo cannot hide the PR. That is what keeps `--resume` and the follow-up `/fix-issues` after a
 review round from building a duplicate stack.
 
 ## Who can steer a fix

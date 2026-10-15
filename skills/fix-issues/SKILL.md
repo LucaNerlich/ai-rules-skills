@@ -66,7 +66,7 @@ Scope:
 - User said "work the backlog", or named a priority or a maximum count → respect it, still excluding `sweep:blocked` unless they asked to retry those.
 - Otherwise propose the next batch (default: all in-scope `priority:high`) as part of the step 2c question. Do not confirm the list here and again there.
 
-**Scope token** — one space-free token for the `scope:` marker, matched exactly. No scope, or the repo root (`.`, `./`, the top-level path) → `repo`. Otherwise the scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-`: `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). An empty result (`..`, `/`) is rejected: stop and ask for a nameable scope — never stamp or match an empty `scope:`.
+**Scope token** — one space-free token for the `scope:` marker, matched exactly. No scope, or the repo root (`.`, `./`, the top-level path) → `repo`. Otherwise the scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-`: `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). An empty result (`..`, `/`) is rejected: stop and ask for a nameable scope — never stamp or match an empty `scope:`. The resolved path set goes in the metadata comment (`scope-paths:`), never in the token.
 
 ### Skip work already in flight
 
@@ -80,6 +80,8 @@ An issue stays open until its PR merges, so an open issue may already be fixed o
 gh pr list --repo "$R" --state open --limit 500 --json number,headRefName,body
 git branch --list 'fix/*'; git ls-remote --heads origin 'fix/*'
 ```
+
+A PR list that returns exactly `--limit` rows may hide more: raise the limit and re-list before deciding an issue has no PR in flight.
 
 Report each as `#<n> — already in PR #<x>` (or `branch fix/<n>-… exists, no PR`) and never build a second layer for it. A named issue that is in flight is reported too; build it only if the user confirms. Review fixes for an open layer go through step 5.
 
@@ -184,7 +186,7 @@ For each issue — or group of issues sharing a layer — work through these bef
      gh issue comment <n> --repo "$R" --body-file "$d/<n>.md"
      ```
 
-     If label creation is denied, say so and still exclude the issue for this run. A blocked high must not stop medium and low work.
+     If label creation is denied, say so and still exclude the issue for this run. A create that fails because the label already exists is not a denial — the label is there; apply it. A blocked high must not stop medium and low work.
 2. **Lay the layer.** The first layer creates the stack; each later one is added on top:
    - First layer of a stack: `gh stack init --base <trunk> fix/<n>-<slug>` (creates the bottom branch and checks it out).
    - Later layers: `gh stack add fix/<n>-<slug>` (branches off the current top and checks it out).
@@ -248,7 +250,7 @@ gh label create "priority:low"    --repo "$R" --color 0E8A16
 gh pr edit <n> --repo "$R" --add-label "priority:medium,bug"
 ```
 
-Never `gh label create --force`: it overwrites an existing label's color and description.
+Exactly 500 names back means the list may be cut off: raise `--limit` and re-list before calling a label missing. A create that fails because the label already exists means it is there. Never `gh label create --force`: it overwrites an existing label's color and description.
 
 A layer with no labelled issue — an on-layer review fix, or work the user asked for directly — gets the priority tier it was scheduled under and nothing else. The same tolerance as `/create-issues` applies: if a label cannot be created, apply the ones that exist, report it, and print the exact commands a maintainer must run. Never let a missing label cost the PR, and never set the repo's own workflow labels (`release candidate`, `work in progress`, `scheduled`) — those are the user's calls.
 

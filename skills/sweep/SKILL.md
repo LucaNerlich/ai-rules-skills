@@ -97,9 +97,9 @@ A scope is one of three things; resolve it to an explicit path set before scanni
 
 Print the resolved set and the modules it covers (`Scope: 4 modules, 37 files — <paths>`), then confirm it in one line before scanning. If a term resolves to **nothing**, or anything but `.` resolves to the whole repo, **stop and say so** — never quietly widen a narrow run to the whole repo. Offer the closest matches and ask.
 
-**Scope token** — one space-free token for the `scope:` marker, matched exactly. No scope, or the repo root (`.`, `./`, the top-level path) → `repo`. Otherwise the scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-`: `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). An empty result (`..`, `/`) is rejected: stop and ask for a nameable scope — never stamp or match an empty `scope:`.
+**Scope token** — one space-free token for the `scope:` marker, matched exactly. No scope, or the repo root (`.`, `./`, the top-level path) → `repo`. Otherwise the scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-`: `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). An empty result (`..`, `/`) is rejected: stop and ask for a nameable scope — never stamp or match an empty `scope:`. The resolved path set goes in the metadata comment (`scope-paths:`), never in the token.
 
-Issues carry `scope:<token>` in the marker and the resolved paths in their metadata, so they say what they came from and `fix-issues --scope` matches them exactly. A scoped run still mints its run id.
+So each issue says what it came from, and `fix-issues --scope` matches it exactly. A scoped run still mints its run id.
 
 Mint a run id, `sweep-YYYYMMDD-HHMM-<4 random [a-z0-9]>` (e.g. `sweep-20261014-0930-k3f9`, minted as in `create-issues`), and pass it, the repo, the scope token, and the resolved paths to every child. Issues filed this run carry both (see `create-issues`). Resume keys off this id — never off "any open `priority:*` issue".
 
@@ -153,7 +153,7 @@ Ask once, in two parts:
 ### 9. Close the loop — on the layer, or as a new issue
 
 - **On-layer, user said yes:** delegate to `fix-issues` in on-layer mode, with the repo. It checks out the existing branch, commits there, rebases upstack, and updates the open PR. It must not `gh stack init` and must not file an issue.
-- **Out-of-scope, user said yes:** delegate to `create-issues` with the run id and the repo. It dedupes, maps severity to `priority:*` (blocker/major → high, minor → medium, nit → low), and files only those. Then print the `/fix-issues` command. Do not start that fix in this same run — one review round per sweep.
+- **Out-of-scope, user said yes:** hand `create-issues` the **out-of-scope list** from `review.md` — never the on-layer list — with the run id and the repo. It keeps each fingerprint and `group`, dedupes, maps severity to `priority:*` (blocker/major → high, minor → medium, nit → low), and files only those. Then print the `/fix-issues` command. Do not start that fix in this same run — one review round per sweep.
 
 Findings already dismissed (a resolved thread, or a maintainer's rejection — see `review-issues`) are excluded. This run stops after one review round; it does not review the review-fix.
 
