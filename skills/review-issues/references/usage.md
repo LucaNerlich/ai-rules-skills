@@ -41,10 +41,16 @@ or request changes on your own PR.
 
 ## Dedupe
 
-Each finding carries `<!-- review-issues:<fingerprint> -->`, where the fingerprint is a hash of
-`path + normalized title` — deliberately not the line number. `/fix-issues` rebases the chain
-constantly, so a line-based fingerprint would mint a new hash after every rebase and repost the
-same finding. Existing fingerprints are read before posting.
+Two guards. First, semantic: the findings already on the PR (severity · path:line · title) go
+into the reviewer's prompt as "already raised — do not report again", so a reworded title does
+not slip through. Second, exact: each finding carries `<!-- review-issues:<fingerprint> -->`, a
+12-char `shasum` of `path|normalized title` — deliberately not the line number. `/fix-issues`
+rebases the chain constantly, so a line-based fingerprint would mint a new hash after every
+rebase and repost the same finding.
+
+A finding counts as dismissed when its review thread is resolved or a maintainer (`OWNER`,
+`MEMBER`, `COLLABORATOR`) rejected it in a reply. A drive-by "this is fine" from anyone else is
+read as context, not as a dismissal.
 
 ## The two handoff lists
 
@@ -84,11 +90,11 @@ reposted.
 
 | Symptom | Cause | Do |
 | --- | --- | --- |
-| Same finding posted twice | fingerprint matched nothing (title edited, or an older line-based marker) | delete the duplicate; keep posting, the new marker is stable |
-| `422` on a line-anchored comment | the line is not part of the diff | post it as a general PR comment instead |
+| Same finding posted twice | the reviewer was not given the already-raised list, or an older line-based marker | delete the duplicate; check step 2 built the list from comments **and** review threads |
+| `422` on a line-anchored comment | a wrongly typed field (`line` sent with `-f` instead of `-F`), or the line is not part of the diff | read the error message; fix the call, and fall back to a general comment only for a line outside the diff |
 | Cannot approve the PR | it is your own | that is what the `--comment` verdict is for |
 | Review found nothing | diff reviewed without the surrounding code | re-run; the subagent must trace the flow, not just read the diff |
-| A finding you dismissed returns next pass | dismissed state is tracked per fingerprint, and the title changed | note it on the PR; the loop reads existing comments |
+| A finding you dismissed returns next pass | the thread was left open and the reply was not from a maintainer | resolve the thread, or reply as an owner/member/collaborator |
 
 ## What this skill will not do
 
