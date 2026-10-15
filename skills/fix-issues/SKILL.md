@@ -16,14 +16,14 @@ Work `priority:high` → `priority:medium` → `priority:low`. Within a priority
 
 An issue labelled `sweep:blocked` is **not in scope**. It must not freeze the rest of the backlog. List blocked issues once, ask whether to retry any, and otherwise skip them.
 
-The stack is built **bottom-to-top in the order you fix**: highest priority at the bottom (it merges first and unblocks the layers above it), lowest priority of the batch at the top. Issues that share no files go into **separate stacks**, and a chain past `--max-layers` is split — see step 2.
+The stack is built **bottom-to-top in the order you fix**: highest priority at the bottom (it merges first and unblocks the layers above it), lowest priority of the batch at the top. Issues that share no files go into **separate stacks**, and each stack is capped at `--max-layers` — see step 2.
 
 ## Arguments
 
 | Arg | Meaning | Default |
 | --- | --- | --- |
 | `--pr-grouping` | `recommended` · `strict` (one PR per issue) · `coarse` (fold aggressively) | `recommended` |
-| `--max-layers` | max layers per stack before splitting into another stack | `5` |
+| `--max-layers` | cap on layers per stack; a file-linked group past it stays one stack and you are asked to raise the cap or defer | `5` |
 | `--stacks` | `auto` · `by-module` · `by-priority` · `<n>` | `auto` |
 | `--priority` | lowest priority to work | `low` |
 | `--scope` | take only issues whose marker carries exactly this scope token (`scope:<slug>`) | none (every issue) |
@@ -70,7 +70,7 @@ An issue stays open until its PR merges, so an open issue may already be fixed o
 
 - an open PR linked to it (`closedByPullRequestsReferences`), or an open PR whose body names it (`Fixes|Closes|Refs #<n>`);
 - a `fix/<n>-*` branch, local or on the remote;
-- a row in this run's `stacks.md` (step 8).
+- a row in this run's `stacks.md` (step 8) with status `opened` or `already in PR`. A `blocked` or `already fixed` row does not count — a blocked issue is retried once its question is answered.
 
 ```
 gh pr list --state open --limit 500 --json number,headRefName,body
@@ -125,7 +125,7 @@ Fixes #<b>
 
 `Fixes` only for an issue this layer fully closes. Use `Refs` for one it only partly covers — see step 3.
 
-### 2b. Cap the stack; split before it grows
+### 2b. Cap the stack
 
 Default: **5 layers per stack** (`--max-layers`, default 5). A longer chain is not reviewable. A second stack that touches the same files is not independent — it will not merge until the first lands.
 

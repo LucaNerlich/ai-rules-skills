@@ -44,6 +44,7 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 | `--scope <path\|module\|feature>` (or a bare positional) | narrow the run to one module or area; the default is the whole repo. Resolved to an explicit path set and confirmed before scanning |
 | `--issue-grouping recommended\|coarse\|strict` | how findings become issues. Asked once, at the file gate |
 | `--pr-grouping recommended\|strict\|coarse` | how issues become PRs. A separate knob — `coarse` on both double-folds |
+| `--grouping <level>` | shorthand that sets both grouping knobs to the same level |
 | `--max-layers N` | cap layers per stack (default 5). Overlap past the cap stays one stack |
 | `--stacks auto\|by-module\|by-priority\|N` | how the batch is split. Stacks share no files; `auto` makes one stack per group of issues that share files, so an unrelated blocker never holds another fix |
 | `--max N` | cap issues filed / fixed (counts issues after clustering, never cuts a cluster in half) |

@@ -136,8 +136,8 @@ measurably reduces complexity a reader is paying for. It is NOT a finding if it 
 taste (naming, formatting, "I'd write it differently"), speculative flexibility ("could
 be more generic/extensible"), an abstraction debate with no concrete harm, a trivial or
 already-covered test gap, doc polish, or a trade-off the code already names (a
-`ponytail:` marker is a decision, not an oversight — unless its named ceiling is
-demonstrably hit). If you cannot name the input or
+`ponytail:` marker is a decision, not an oversight — unless it names no upgrade trigger
+or its named ceiling is demonstrably hit). If you cannot name the input or
 state that triggers a wrong outcome, you do not have a finding — drop it.
 
 Output EXACTLY one block per finding. One line per field — real detail, never filler; these fields are the raw material `/create-issues` writes into the issue body, so state the mechanism rather than restating the title:

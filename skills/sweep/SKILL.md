@@ -51,7 +51,7 @@ The children sit beside this skill: `install.sh` installs `find-problems`, `crea
 | `--issue-grouping` | how findings become issues: `recommended` · `coarse` · `strict` | `recommended` |
 | `--pr-grouping` | how issues become PRs: `recommended` · `strict` · `coarse` | `recommended` |
 | `--grouping` | shorthand that sets **both** of the above to the same level. Say so — `coarse` then double-folds | off |
-| `--max-layers` | max layers per stack before `fix-issues` splits into another stack | `5` |
+| `--max-layers` | cap on layers per stack; a file-linked group past it stays one stack and is not split | `5` |
 | `--stacks` | how the batch is split: `auto` (one stack per group of issues sharing files) · `by-module` · `by-priority` · `<n>` | `auto` |
 | `--include-speculative` | file `confidence: speculative` findings too | off |
 | `--fix-on-layer` | at `--depth review`, commit review fixes onto the existing layers | off |

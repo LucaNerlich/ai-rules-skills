@@ -1,6 +1,6 @@
 ---
 description: Scan a codebase module-by-module with parallel subagents and produce an evidence-backed findings report (read-only)
-argument-hint: "[path|module|feature ...]"
+argument-hint: "[path|module|feature ...] [--scope path|module|feature]"
 ---
 
 Read `{{SKILLS_DIR}}/find-problems/SKILL.md` and follow it exactly as written — it is the
