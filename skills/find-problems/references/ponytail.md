@@ -1,8 +1,9 @@
 # Ponytail ruleset (vendored)
 
 A slim, pinned subset of **Ponytail 4.9.0 — "lazy senior dev mode"** by Dietrich Gebert
-(MIT License, Copyright (c) 2026 DietrichGebert). Vendored so every scanning subagent
-operates under the same lens even in harnesses where the Ponytail plugin is not installed.
+(MIT License, Copyright (c) 2026 DietrichGebert; full text in `ponytail.LICENSE` beside this
+file). Vendored so every scanning subagent operates under the same lens even in harnesses
+where the Ponytail plugin is not installed.
 
 Prefer the installed Ponytail commands when they are present (`/ponytail`, `/ponytail-review`,
 `/ponytail-audit`, `/ponytail-debt`); this file is the canonical fallback and the exact text

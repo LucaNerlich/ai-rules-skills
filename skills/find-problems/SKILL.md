@@ -58,7 +58,7 @@ When in doubt, the answer is no finding. The cost of a wrong finding is a real i
 
 Every scan runs in **Ponytail, lazy senior dev mode**, because the goal is *correct and lean* code: fix the real bug at the root, and delete complexity rather than add more.
 
-The ruleset is **vendored** at [`references/ponytail.md`](references/ponytail.md) — the ladder, the rules, the "never lazy about" list, and the `review` / `audit` / `debt` finding formats and tags. It is a slim, pinned subset of Ponytail 4.9.0 (MIT), so the lens travels with the skill into harnesses where the plugin is not installed.
+The ruleset is **vendored** at [`references/ponytail.md`](references/ponytail.md) — the ladder, the rules, the "never lazy about" list, and the `review` / `audit` / `debt` finding formats and tags. It is a slim, pinned subset of Ponytail 4.9.0 (MIT, license text in [`references/ponytail.LICENSE`](references/ponytail.LICENSE)), so the lens travels with the skill into harnesses where the plugin is not installed.
 
 Prefer the installed Ponytail commands when they are present (they add the always-on mode and live state):
 
