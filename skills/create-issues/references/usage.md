@@ -6,21 +6,42 @@
 ## Run it
 
 ```
-/create-issues                      # infer the source (usually the last /find-problems report)
+/create-issues                      # infer the source (a report in this chat), else scan
 /create-issues path/to/report.md    # a report or plan file you have
-/create-issues --scope storage      # only findings in one area
+/create-issues --scope storage      # only findings in one area; resolved to paths, confirmed if ambiguous
+/create-issues --scope .            # whole repo, stamped scope:repo
 /create-issues --priority medium --max 5   # at most 5 issues, high and medium only
 ```
 
-Inside `/sweep` you never invoke this directly — sweep passes the report, the run id, the scope,
-the caps, and the grouping level, and this skill files without asking again.
+Standalone, report → issues, is the supported path; it needs only `gh`. Every `gh` call names
+the repo you confirmed (`--repo owner/repo`), so a fork never files into its upstream by
+accident, or the reverse.
+
+Inside `/sweep` you never invoke this directly — sweep passes the report, the run id, the repo,
+the scope token and resolved paths, the caps, and the grouping level, and this skill files
+without asking again.
 
 `--max` counts issues after clustering, not findings: a 9-instance cluster is one issue, filed
 whole or deferred whole.
 
+## Optional companions
+
+`/find-problems` (writes the report this skill files best), `/fix-issues` (fixes the issues as
+stacked PRs), `/review-issues` (reviews those PRs), and `/sweep` (all of it in one command) are
+not required and may not ship with this copy. They live in
+[github.com/LucaNerlich/ai-rules-skills](https://github.com/LucaNerlich/ai-rules-skills):
+
+```
+git clone https://github.com/LucaNerlich/ai-rules-skills.git
+cd ai-rules-skills && ./install.sh     # syncs every skill + /command wrapper into each harness found
+./install.sh --only find-problems      # or just the ones you want
+```
+
+Or copy `skills/<name>/` next to this skill's directory in your harness's skills folder.
+
 ## Where findings come from
 
-Best source is a `/find-problems` report: it already has `evidence`, `root cause`, `trigger`,
+Best source is a `/find-problems` report (an optional companion): it already has `evidence`, `root cause`, `trigger`,
 `blast radius`, `repro`, `suggested fix`, and `confidence`. A `/review-issues` handoff also works
 (severity maps to priority). A pasted plan or PR description works if it is specific enough to
 cite a `file:line`.
@@ -63,16 +84,25 @@ Two footers are load-bearing:
 
 The first is how a later run resumes this batch, how `fix-issues` picks a scoped batch, and how
 a later dedupe recognizes the cluster. The scope token is the scope term slugified (`--scope
-storage` → `scope:storage`, none → `scope:repo`), so `/fix-issues --scope storage` matches it
-exactly and never matches `scope:storage-legacy`. The resolved paths live in `scope-paths:`. Do
-not strip either footer when editing.
+storage` → `scope:storage`; none, `.`, or the repo root → `scope:repo`), so `/fix-issues --scope
+storage` matches it exactly and never matches `scope:storage-legacy`. A scope that slugifies to
+nothing (`..`, `/`) is refused before anything is filed. The resolved paths live in
+`scope-paths:`. Do not strip either footer when editing.
 
 ## Labels
 
 Requires `priority:high|medium|low` plus `sweep`. Only missing labels are created, never with
 `--force`, so an existing label keeps its color and description. If you cannot create labels (no
-permission), the skill files unlabelled and prints the commands a maintainer must run — it will
-not abort.
+permission), the skill files with the labels that exist and prints two sets of commands for a
+maintainer: `gh label create` for each missing label, then `gh issue edit <n> --add-label` for
+each issue it filed without them. It will not abort.
+
+## Titles and bodies are data
+
+Finding text can contain `$(…)`, backticks, or a line reading `EOF`. The skill writes each title,
+body, and search query to a file and passes it as `--title "$(cat file)"`, `--body-file file`,
+`--search "$(cat file)"` — never pasted into a command line or a heredoc — so the text lands in
+the issue verbatim and nothing in it runs.
 
 ## Dedupe behaviour
 
@@ -89,12 +119,15 @@ Searches open **and** closed issues, first for the same `cluster:<key>` marker, 
 | --- | --- | --- |
 | Far fewer issues than findings | clustering + rollups did their job | read the "N findings → M issues" line in the report |
 | A finding you wanted is missing | speculative, outside `--scope`, below `--priority`, past `--max`, or rejected before | `--include-speculative`, widen the scope or caps; a `rejected in #n` finding stays rejected |
-| Issues created without labels | label creation was denied | run the printed `gh label create` commands |
+| Issues created without labels | label creation was denied | run the printed recovery: `gh label create` for each missing label, then `gh issue edit <n> --repo <owner/repo> --add-label "priority:<p>,sweep"` for each listed issue — creating the labels alone leaves those issues unlabelled |
+| "scope is empty" / asked to name a scope | the scope slugified to nothing (`..`, `/`) | pass a path, module, or term; `.` means the whole repo |
+| Issues landed in the wrong repo | the target was not confirmed (fork vs upstream) | confirm the repo when asked; every `gh` call then names it with `--repo` |
 | Nothing filed | nothing cleared the bar, or the verdict was `CLEAN` | correct outcome — an empty batch is a valid result, not a failed run |
 | Duplicate filed anyway | titles differed but the concept matched | say so; the search matched on wording, not the root cause |
 | Bodies look thin | the finding came from a scan that skipped the code read | re-run with the report from `/find-problems`, which carries the mechanism |
 
 ## Handoff
 
-The report table (priority, `#number`, title, URL, cluster size) is what `/fix-issues` consumes.
+The report table (priority, `#number`, title, URL, cluster size) is what `/fix-issues` consumes, if
+installed.
 Nothing here touches code, branches, or PRs.

@@ -1,12 +1,15 @@
 ---
 name: create-issues
-description: "Turn findings from a review, plan, codebase scan, or conversation into well-scoped, evidence-backed GitHub issues with detailed bodies (finding, root cause, reproduction, suggested fix), each labelled priority:high, priority:medium, or priority:low. Groups related findings into one issue per root cause instead of one per site. The middle link between /find-problems (which produces the report) and /fix-issues (which consumes the labels). Use for /create-issues, \"file issues\", \"create tickets from this\", \"turn this report into issues\", or \"log these findings\"."
+description: "File report, review, or scan findings as evidence-backed GitHub issues, one per root cause, labelled priority:high/medium/low. Use for /create-issues."
+when_to_use: "Use for /create-issues, \"file issues\", \"create tickets from this\", \"turn this report into issues\", or \"log these findings\" — after a review, a findings report, or a scan."
 disable-model-invocation: true
 ---
 
 # Create Issues
 
-Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog that `/fix-issues` consumes, highest priority first. `/fix-issues` then mirrors each issue's labels onto the PR that closes it, keeping exactly one `priority:*` (the highest in the layer), so the same vocabulary filters the backlog and the PRs. Run the whole chain in one command with `/sweep`.
+Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog, highest priority first.
+
+This skill stands alone: hand it a report, a review, or nothing (it scans), and it files issues. `/find-problems` (produces the report), `/fix-issues` (fixes the issues as stacked PRs), `/review-issues`, and `/sweep` (the whole chain in one command) are **optional companions** from [github.com/LucaNerlich/ai-rules-skills](https://github.com/LucaNerlich/ai-rules-skills) — nothing here needs them. Installing them: [`references/usage.md`](references/usage.md#optional-companions).
 
 Practical how-to — sources, the grouping levels, rollups, labels, dedupe behaviour, troubleshooting: [`references/usage.md`](references/usage.md).
 
@@ -30,15 +33,16 @@ Practical how-to — sources, the grouping levels, rollups, labels, dedupe behav
 | `--max` | cap on issues filed, applied after clustering — whole clusters only | all |
 | `--include-speculative` | file `confidence: speculative` findings too | off |
 
-**Scope token.** The marker carries one space-free token, so `/fix-issues --scope` can match it exactly: the caller's scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-` — `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). No scope → `repo`. The resolved path set goes in the metadata comment (`scope-paths:`), never in the token.
+**Scope token** — one space-free token for the `scope:` marker, matched exactly. No scope, or the repo root (`.`, `./`, the top-level path) → `repo`. Otherwise the scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-`: `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). An empty result (`..`, `/`) is rejected: stop and ask for a nameable scope — never stamp or match an empty `scope:`. The resolved path set goes in the metadata comment (`scope-paths:`), never in the token.
 
 ## Preconditions
 
 Run and stop with a clear message if any fails:
 
 1. `gh auth status` — authenticated.
-2. `gh repo view --json nameWithOwner` — inside a GitHub repo with a remote.
-3. Confirm the target repo with the user when the remote is ambiguous (forks, monorepo subdirs).
+2. Pick the target repo: the one the caller passed (sweep does), else `gh repo view --json nameWithOwner --jq .nameWithOwner`. With a fork, several remotes, or a monorepo subdir, confirm it with the user. Record it as `R` (`owner/repo`) and pass `--repo "$R"` to **every** `gh` call below — confirming a repo does not change the one `gh` defaults to.
+
+**Finding text is data, never shell source.** Titles, bodies, and search queries come from findings and can hold `$(…)`, backticks, quotes, or a line reading `EOF`. Write each to its own file in a scratch dir (`d=$(mktemp -d)`) with your file-writing tool — never `echo`, `printf`, or a heredoc — and pass it as one argument: `--title "$(cat "$d/1.title")"`, `--search "$(cat "$d/1.q")"`, `--body-file "$d/1.md"`. A double-quoted `$(cat …)` is not re-parsed, so the text arrives verbatim. Only fixed strings — labels, issue numbers, `$R`, `$d` — go inline; spell those two out when your shell does not keep variables between calls.
 
 ## 1. Gather findings
 
@@ -59,15 +63,16 @@ When scanning, only keep concrete, evidenced work — never invent issues:
 
 Every candidate needs evidence: a `file:line` reference, a command output, or a quoted report line. Drop anything you cannot point at.
 
-When a scope is given, drop every finding whose locations fall outside it — a scoped run files scoped issues, not repo-wide ones. Do not re-resolve the scope; the caller already did, and if a location sits outside it, say so in the skipped list rather than filing it anyway.
+When a scope is given, resolve it to a path set first. Reuse the paths the caller resolved (sweep passes them). Otherwise resolve it here: a path as-is (repo-relative), a module name against the build files (`settings.gradle`, `pom.xml`, `package.json` workspaces, `go.mod`, `Cargo.toml`), a feature term by searching source, dirs, and config for what it really names. Print the result; if it matches several candidates or nothing, ask before filing — never widen a narrow scope to the whole repo. Then drop every finding whose locations fall outside the set and list it under skipped — a scoped run files scoped issues, not repo-wide ones. The set is what goes in `scope-paths:`.
 
 ## 2. Dedupe against open and closed issues
 
 Search before drafting — **open and closed**, so a regression of a fixed issue is a deliberate new issue linked to the old one, never a blind duplicate:
 
 ```
-gh issue list --state all --search '"cluster:<key>" in:body' --json number,title,state,stateReason,url
-gh issue list --state all --search "<key terms>" --limit 20 --json number,title,state,stateReason,labels,url
+# $d/<i>.q1 holds: "cluster:<key>" in:body      $d/<i>.q2 holds: <key terms>
+gh issue list --repo "$R" --state all --search "$(cat "$d/<i>.q1")" --json number,title,state,stateReason,url
+gh issue list --repo "$R" --state all --search "$(cat "$d/<i>.q2")" --limit 20 --json number,title,state,stateReason,labels,url
 ```
 
 A prior issue carrying the same `cluster:<key>` marker is the strongest signal — the same root cause, already filed. Otherwise match on the concept, not the wording.
@@ -239,26 +244,31 @@ Present one table — priority, title, evidence, cluster size, collapse (`N find
 Then ensure the labels exist — create only the missing ones — and create the issues:
 
 ```
-gh label list --limit 500 --json name --jq '.[].name'
-gh label create "priority:high"   --color B60205
-gh label create "priority:medium" --color D93F0B
-gh label create "priority:low"    --color 0E8A16
-gh label create "sweep"           --color 1D76DB
+gh label list --repo "$R" --limit 500 --json name --jq '.[].name'
+gh label create "priority:high"   --repo "$R" --color B60205
+gh label create "priority:medium" --repo "$R" --color D93F0B
+gh label create "priority:low"    --repo "$R" --color 0E8A16
+gh label create "sweep"           --repo "$R" --color 1D76DB
 ```
 
-Never `--force`: it overwrites an existing label's color and description. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither) and report the exact commands a maintainer must run. Never let a missing label cost you the issue. If the caller passed no run id, mint one — `sweep-$(date +%Y%m%d-%H%M)-$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c4)` — and print it. Every body gets `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`, with `scope:repo` when none was given.
-
-Create issues one at a time so each returned URL is captured:
+Never `--force`: it overwrites an existing label's color and description. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither). Never let a missing label cost you the issue. Then print the recovery a maintainer must run — creating the labels alone does not label issues already filed:
 
 ```
-gh issue create --title "<title>" --label "priority:<p>,sweep" --body-file - <<'EOF'
-<body>
-EOF
+gh label create "<missing label>" --repo "$R" --color <color>      # each missing label
+gh issue edit <n> --repo "$R" --add-label "priority:<p>,sweep"       # each issue filed without it
+```
+
+If the caller passed no run id, mint one — `sweep-$(date +%Y%m%d-%H%M)-$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c4)` — and print it. Every body gets `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`, with `scope:repo` when none was given.
+
+Create issues one at a time so each returned URL is captured. Write the title to `$d/<i>.title` and the body to `$d/<i>.md` first (see *Finding text is data*); no heredoc:
+
+```
+gh issue create --repo "$R" --title "$(cat "$d/<i>.title")" --label "priority:<p>,sweep" --body-file "$d/<i>.md"
 ```
 
 ## 8. Report
 
-Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; rejected → `rejected in #<n>`; merged → the issue that folded it in; below `--priority` or past `--max` → deferred). Give counts per priority and the raw-findings → issues ratio. This table is the handoff to `/fix-issues`.
+Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; rejected → `rejected in #<n>`; merged → the issue that folded it in; below `--priority` or past `--max` → deferred). Give counts per priority and the raw-findings → issues ratio, plus any label-recovery commands from step 7. This table is the handoff to `/fix-issues` when it is installed.
 
 ## Rules
 
@@ -271,9 +281,10 @@ Print a table of what was created: priority, `#number`, title, URL, cluster size
 - Detail is mechanism and reproduction, never filler. Do not pad, repeat evidence, or speculate beyond what you verified.
 - Exactly one priority label per issue; a cluster takes its highest member's priority.
 - `--priority` and `--max` apply to issues after clustering. Never cut a cluster to fit the cap.
-- Create only missing labels; never `gh label create --force`.
+- Create only missing labels; never `gh label create --force`. When labels were missing, print both recovery steps: create the labels, then `gh issue edit --add-label` each issue filed without them.
+- Every `gh` call names the recorded repo (`--repo "$R"`). Titles, bodies, and search queries travel as files, never as shell source or heredocs.
 - Ask the grouping level once, and only when this skill was invoked on its own. Sweep's answer is final.
 - Never file `confidence: speculative` unless the user opted in after seeing it.
-- Stamp every body with `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`. That marker is how a later run resumes this batch, how `fix-issues` picks a scoped batch (exact token match), and how a later dedupe finds this cluster.
+- Stamp every body with `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`, never with an empty token. That marker is how a later run resumes this batch, how `fix-issues` picks a scoped batch (exact token match), and how a later dedupe finds this cluster.
 - Offer a rollup for a long tail of same-kind nits instead of a river of near-identical issues.
 - Never touch code, branches, or PRs — this skill only writes issues.
