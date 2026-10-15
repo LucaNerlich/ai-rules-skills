@@ -52,7 +52,7 @@ The children sit beside this skill: `install.sh` installs `find-problems`, `crea
 | `--pr-grouping` | how issues become PRs: `recommended` · `strict` · `coarse` | `recommended` |
 | `--grouping` | shorthand that sets **both** of the above to the same level. Say so — `coarse` then double-folds | off |
 | `--max-layers` | max layers per stack before `fix-issues` splits into another stack | `5` |
-| `--stacks` | how a long batch is split: `auto` (file-disjoint) · `by-module` · `by-priority` · `<n>` | `auto` |
+| `--stacks` | how the batch is split: `auto` (one stack per group of issues sharing files) · `by-module` · `by-priority` · `<n>` | `auto` |
 | `--include-speculative` | file `confidence: speculative` findings too | off |
 | `--fix-on-layer` | at `--depth review`, commit review fixes onto the existing layers | off |
 | `--resume <id>` | continue the run stamped `sweep-run:<id>`, not the rest of the backlog | off |
@@ -159,6 +159,7 @@ Resume only **this run**, never the standing backlog. A repo full of old `priori
 
 - A report already produced this session, or the user passes `--resume <run-id>` → skip phase 1 and reuse that report, keeping its scope. A `--scope` given with `--resume` that differs from the run's scope is a new run: say so rather than mixing them.
 - Issues carrying this run's `sweep-run:<id>` marker are already filed → skip to the fix gate for **those** issues only.
+- Issues of this run already in an open PR or on a `fix/<n>-*` branch → never re-fixed; `fix-issues` reports them as in flight. This also covers the `/fix-issues --resume <id>` printed after phase 9.
 - Out-of-scope review findings already filed under this run id → skip the re-file.
 - The user explicitly says "work the backlog" → that is a `fix-issues` invocation, not a sweep resume. Say so.
 - At `--depth review` with this run's stacks already open → review every PR in those stacks, not only the current one.
@@ -192,7 +193,7 @@ End with one cycle summary:
 - A review finding in the fix itself is committed onto that layer, or left as a PR comment. It is not a new issue and not a new stack. Only out-of-scope findings are filed.
 - `--issue-grouping` and `--pr-grouping` are different knobs. Do not pass one `coarse` into both unless the user set `--grouping`.
 - `--max` counts issues (post-clustering), never individual findings. Never cut a cluster in half.
-- Stacks are file-disjoint and capped at `--max-layers` (default 5). Never build a longer chain, and never a second stack that touches the same files, without the user raising the cap.
+- Stacks are file-disjoint — one per group of issues sharing files under `--stacks auto` — and capped at `--max-layers` (default 5). Never build a longer chain, and never a second stack that touches the same files, without the user raising the cap.
 - Never file an issue or open a PR to justify the run. A `CLEAN` report ends the cycle — zero findings is the expected result for code that is already fine.
 - Respect the scope in every phase: report, file, fix, review. A finding outside the scope is out of this run, not a finding.
 - Never widen a scope silently. If a term does not resolve, stop and ask — a narrow run must not quietly become a repo-wide one.
