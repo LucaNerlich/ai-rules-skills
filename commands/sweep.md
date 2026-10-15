@@ -3,10 +3,9 @@ description: Run the full sweep chain — scan, file clustered issues, fix them 
 argument-hint: "[scope...] [--scope path|module|feature] [--depth report|file|fix|review] [--priority high|medium|low] [--max N] [--issue-grouping recommended|coarse|strict] [--pr-grouping recommended|strict|coarse] [--max-layers N] [--stacks auto|by-module|by-priority|N] [--include-speculative] [--fix-on-layer] [--resume id] [--yes]"
 ---
 
-Load and follow the **`sweep`** skill exactly as written.
-
-If this harness does not expose the skill, read `{{SKILLS_DIR}}/skills/sweep/SKILL.md` and treat
-that file as the skill (it delegates to `find-problems`, `create-issues`, `fix-issues`, and
-`review-issues`, which sit beside it).
+Read `{{SKILLS_DIR}}/sweep/SKILL.md` and follow it exactly as written — it is the **`sweep`**
+skill. It runs `find-problems`, `create-issues`, `fix-issues`, and `review-issues` from the
+sibling directories beside it. (These skills set `disable-model-invocation`, so a skill tool
+may refuse to load them; the path always works.)
 
 Arguments: $ARGUMENTS
