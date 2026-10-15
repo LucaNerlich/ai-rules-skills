@@ -48,7 +48,7 @@ Do not report these, however tempting:
 - abstraction debates: extracting two duplicated lines, or inlining a single-implementation helper — each only a finding if a reader is measurably hurt
 - "no tests" when the behaviour is trivial or covered elsewhere
 - docs or wording polish with no wrong statement
-- a deliberate trade-off the code already names (a `ponytail:` marker, a comment explaining the ceiling) — that is a decision, not an oversight
+- a deliberate trade-off the code already names (a `ponytail:` marker, a comment explaining the ceiling) — that is a decision, not an oversight, unless it names no upgrade trigger or its ceiling is demonstrably hit (§3)
 - anything the team has plainly already decided, or that an open ticket already covers
 - a thing that is merely **not how you would do it**, where what is there works and is clear
 
@@ -65,7 +65,7 @@ Prefer the installed Ponytail commands when they are present (they add the alway
 | Need | Invoke |
 | --- | --- |
 | Base mode for the session | `/ponytail full` (default; `ultra` for maximum deletion) |
-| Whole-repo over-engineering audit | `/ponytail-audit` |
+| Cross-module over-engineering audit (over the scope) | `/ponytail-audit` |
 | Over-engineering review of a diff/PR | `/ponytail-review` |
 | Harvest deferred `ponytail:` shortcuts | `/ponytail-debt` |
 
@@ -106,7 +106,10 @@ files, create issues, or run mutating commands. Produce findings only.
 You operate in Ponytail, lazy senior dev mode: the goal is correct AND lean code. The
 complete ruleset — the ladder, the rules, the "never lazy about" list, and the finding
 formats — is appended to this prompt as PONYTAIL RULESET. Follow it: prefer deletion over
-addition and reuse over rewrite, fix root causes, and never trade away correctness.
+addition and reuse over rewrite, fix root causes, and never trade away correctness. Its
+one-line output formats and closing lines (`net: ...`, `Lean already. Ship.`) do NOT apply
+here: report in the block format below and end with the closing line this prompt gives. Its
+tags (`delete`, `stdlib`, `native`, `yagni`, `shrink`) may appear inside a field.
 
 Scan for, in priority order:
 1. Correctness bugs: wrong operators/boundaries/off-by-one, null/None/undefined
@@ -133,7 +136,8 @@ measurably reduces complexity a reader is paying for. It is NOT a finding if it 
 taste (naming, formatting, "I'd write it differently"), speculative flexibility ("could
 be more generic/extensible"), an abstraction debate with no concrete harm, a trivial or
 already-covered test gap, doc polish, or a trade-off the code already names (a
-`ponytail:` marker is a decision, not an oversight). If you cannot name the input or
+`ponytail:` marker is a decision, not an oversight — unless its named ceiling is
+demonstrably hit). If you cannot name the input or
 state that triggers a wrong outcome, you do not have a finding — drop it.
 
 Output EXACTLY one block per finding. One line per field — real detail, never filler; these fields are the raw material `/create-issues` writes into the issue body, so state the mechanism rather than restating the title:
@@ -164,10 +168,11 @@ Output EXACTLY one block per finding. One line per field — real detail, never 
 Keep the fields to one line each. Leave a field out only when it genuinely does not apply; do
 not write "N/A" padding or speculate to fill it.
 
-Priority rubric (shared with /create-issues):
+Priority rubric (the /create-issues labels, read through the bar above):
 - high   = broken behaviour, security, data loss, auth/billing/correctness bugs, regressions.
-- medium = degraded UX/perf, missing validation, tech debt that impedes work, small features.
-- low    = nits, style, docs, refactors, nice-to-haves.
+- medium = degraded UX/perf, missing validation, tech debt that impedes work.
+- low    = dead code, lean refactors that remove complexity a reader pays for, minor defects
+           with a narrow trigger. Never style, naming, or doc polish.
 
 End with: "Module <module>: <N> findings (<H> high, <M> medium, <L> low, <C> clusters)." — or
 the clean line above when N is 0. Do not return 0 findings and then append "observations".
@@ -178,11 +183,13 @@ the clean line above when N is 0. Do not return 0 findings and then append "obse
 
 ## 3. Ponytail passes
 
-In addition to the per-module sweep — and under the same bar. A `/ponytail-audit` that finds nothing says `Lean already. Ship.` That is the expected result for a codebase that is already tidy; it is not a prompt to go looking harder.
+In addition to the per-module sweep — and under the same bar, over the **resolved scope** (the whole repo only when no scope is set). A `/ponytail-audit` that finds nothing says `Lean already. Ship.` That is the expected result for a codebase that is already tidy; it is not a prompt to go looking harder.
 
-- **Whole-repo complexity:** run `/ponytail-audit`, or apply the audit format from `references/ponytail.md`, for the cross-module over-engineering view — ranked, biggest cut first.
-- **Deferred shortcuts:** run `/ponytail-debt`, or grep for the marker per `references/ponytail.md`, to harvest every `ponytail:` marker (a deliberate simplification with a named ceiling and upgrade path). Each is a finding, especially any `no-trigger` one that no longer names how to revisit it.
+- **Cross-module complexity:** run `/ponytail-audit` on the scope's paths, or apply the audit format from `references/ponytail.md` to them, for the cross-module over-engineering view — ranked, biggest cut first.
+- **Deferred shortcuts:** run `/ponytail-debt`, or the marker grep from `references/ponytail.md` with the scope's paths in place of `.`, to harvest the `ponytail:` markers (a deliberate simplification with a named ceiling and upgrade path). A marker is a decision, not a finding. Only two kinds are findings: a `no-trigger` marker (no upgrade path, so it rots silently), and a marker whose named ceiling is demonstrably hit — cite what now exceeds it.
 - **Diff scope:** when the target is a PR or branch rather than the whole repo, run `/ponytail-review`, or apply the review format from `references/ponytail.md`, on the diff and scan only the touched modules.
+
+Audit, debt, and review output is one-liners. Convert each surviving line into the block format from step 2 — with a `path:line` location, a cluster key, priority, and confidence — before consolidating. A line you cannot pin to a `path:line` is dropped.
 
 ## 4. Consolidate
 
