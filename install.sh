@@ -5,11 +5,13 @@
 #   ./install.sh --check         report drift, change nothing, exit 1 if any
 #   ./install.sh --init          also create command dirs where the harness has none
 #   ./install.sh --only <names>  install only these skills (default: the chain)
+#   ./install.sh --only pstack   install the pstack bundle + its wrappers
 #
 # Harnesses are discovered as any $HOME/.<harness> that already has a skills/ dir,
-# so an uninstalled or renamed harness is simply skipped rather than guessed at.
-# A skill ships SKILL.md plus everything under references/. Any other file in an
-# installed skill dir is stale: --check reports it, a sync removes it.
+# so a renamed or uninstalled harness is skipped rather than guessed at. A skill
+# ships every file in its repo dir; an installed file the repo no longer ships is
+# stale (--check reports it, a sync removes it). pstack-models.md is machine state,
+# never synced or pruned. A bundle may ship commands/<name>/*.md wrappers.
 # Keep this bash 3.2 compatible (macOS /bin/bash).
 set -euo pipefail
 
@@ -22,7 +24,7 @@ while [ $# -gt 0 ]; do
     --check) CHECK=1 ;;
     --init)  INIT=1 ;;
     --only)  shift; while [ $# -gt 0 ] && [[ "$1" != --* ]]; do ONLY+=("$1"); shift; done; continue ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -50,20 +52,15 @@ sync_file() { # src dst
 }
 
 shipped() { # skill -> files it ships, relative to its dir
-  printf '%s\n' SKILL.md
-  if [ -d "$REPO/skills/$1/references" ]; then
-    (cd "$REPO/skills/$1" && find references -type f ! -name .DS_Store | LC_ALL=C sort)
-  fi
+  (cd "$REPO/skills/$1" && find . -type f ! -name .DS_Store ! -name pstack-models.md |
+    sed 's|^\./||' | LC_ALL=C sort)
 }
 
 stale() { # skill dst -> installed files the repo no longer ships
   [ -d "$2" ] || return 0
-  (cd "$2" && find . -type f ! -name .DS_Store | LC_ALL=C sort) | while IFS= read -r rel; do
+  (cd "$2" && find . -type f ! -name .DS_Store ! -name pstack-models.md | LC_ALL=C sort) | while IFS= read -r rel; do
     rel="${rel#./}"
-    case "$rel" in
-      SKILL.md|references/*) if [ -f "$REPO/skills/$1/$rel" ]; then continue; fi ;;
-    esac
-    printf '%s\n' "$2/$rel"
+    [ -f "$REPO/skills/$1/$rel" ] || printf '%s\n' "$2/$rel"
   done
 }
 
@@ -89,13 +86,15 @@ for h in $(harnesses); do
   fi
   if [ -n "$cmd_dir" ]; then
     for s in "${CHAIN[@]}"; do
-      src="$REPO/commands/$s.md"
-      [ -f "$src" ] || continue
-      tmp="$(mktemp)"
-      # point the wrapper at the copy installed in this harness, not at the repo
-      sed "s|{{SKILLS_DIR}}|$h/skills|g" "$src" > "$tmp"
-      sync_file "$tmp" "$cmd_dir/$s.md"
-      rm -f "$tmp"
+      # one wrapper per skill, or every wrapper in a bundle's commands/<name>/ dir
+      for src in "$REPO/commands/$s.md" "$REPO/commands/$s"/*.md; do
+        [ -f "$src" ] || continue
+        tmp="$(mktemp)"
+        # point the wrapper at the copy installed in this harness, not at the repo
+        sed "s|{{SKILLS_DIR}}|$h/skills|g" "$src" > "$tmp"
+        sync_file "$tmp" "$cmd_dir/$(basename "$src")"
+        rm -f "$tmp"
+      done
     done
   fi
 done

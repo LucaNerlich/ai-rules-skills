@@ -52,6 +52,22 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 | `--include-speculative` | also file `confidence: speculative` findings (off by default) |
 | `--fix-on-layer` | commit review fixes onto the open layer instead of leaving the comment |
 
+## pstack
+
+[`skills/pstack/`](skills/pstack/) is poteto's engineering bundle — 54 skills (`poteto-mode`,
+`setup-pstack`, `how`, `why`, `architect`, `arena`, `swarm`, `interrogate`, the 24 `principle-*`
+leaves, …) — ported from the Cursor plugin `cursor/plugins/pstack` v0.15.25 for this machine's
+OpenCode/agents harnesses. [`PORTING.md`](skills/pstack/PORTING.md) records the provenance and
+every adaptation; `port/refresh.sh` re-syncs from a newer upstream release.
+
+```sh
+./install.sh --only pstack           # ship the bundle + /setup-pstack /poteto-mode /poteto-help wrappers
+./install.sh --only pstack --check   # drift check for the bundle
+```
+
+Per-role model choices are written at runtime by `/setup-pstack` to
+`~/.agents/skills/pstack/pstack-models.md` — machine state, never synced or pruned by `install.sh`.
+
 - https://cursor.com/docs/context/skills
 - https://vercel.com/blog/introducing-react-best-practices
 - https://vercel.com/design/guidelines
