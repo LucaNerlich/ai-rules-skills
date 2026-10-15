@@ -26,7 +26,11 @@ Sweep is a **thin coordinator**. It delegates every phase to its skill and hands
 
 Practical how-to — recipes, depths, resuming, troubleshooting: [`references/usage.md`](references/usage.md). Read it before a first run; this file is the contract, that file is the walkthrough.
 
-`/sweep` is a thin **command wrapper** that loads this skill (see [`commands/`](../commands/)); the chain also works by invoking each child skill directly. In a harness where the skill is not exposed, run `/sweep` from `commands/sweep.md` or open `skills/sweep/SKILL.md` and follow it. Install or refresh the wrappers for every harness on the machine with `./install.sh` (`./install.sh --check` reports drift).
+`/sweep` is a thin **command wrapper** that loads this skill (`commands/sweep.md` in the source repo); the chain also works by invoking each child skill directly. In a harness where the skill is not exposed, run `/sweep` or open `skills/sweep/SKILL.md` and follow it. Install or refresh the skills and wrappers for every harness on the machine with `./install.sh` (`./install.sh --check` reports drift).
+
+## Running a child
+
+The children sit beside this skill: `install.sh` installs `find-problems`, `create-issues`, `fix-issues`, and `review-issues` next to `sweep`. To run one, **read `../<child>/SKILL.md`** (relative to this file) and follow it, resolving its own links (`references/…`) against its directory. A harness skill tool works too where it can load the child, but every child sets `disable-model-invocation: true` because it has side effects — in Claude Code and Cursor that blocks the tool, so the sibling path is the way in.
 
 ## Arguments
 
@@ -99,7 +103,7 @@ Mint a run id, `sweep-YYYYMMDD-HHMM`, and pass it and the resolved scope to ever
 
 ### 1. Find — delegate to `find-problems`
 
-Load the **`find-problems`** skill and run it over the **resolved scope**. It scans module-by-module under the Ponytail lens and returns the findings report. Pass the scope so it maps only those modules and says what it left out. Do not re-scan or re-derive findings here.
+Run **`find-problems`** (see *Running a child*) over the **resolved scope**. It scans module-by-module under the Ponytail lens and returns the findings report. Pass the scope so it maps only those modules and says what it left out. Do not re-scan or re-derive findings here.
 
 If `--depth report`: print the report and stop.
 
@@ -111,17 +115,17 @@ Summarize per `Gates` above and ask the one file question (file? which `--issue-
 
 ### 3. Create — delegate to `create-issues`
 
-Load the **`create-issues`** skill and hand it the report, the run id, the resolved scope (stamped into every body), and the **already chosen** `--issue-grouping`. Tell it filing is approved and it must not ask again. It drops `speculative` findings unless `--include-speculative`, dedupes, clusters, and files `priority:*` issues labelled `sweep`. Capture the created-issue table plus the findings→issues collapse.
+Run **`create-issues`** and hand it the report, the run id, the resolved scope (stamped into every body), and the **already chosen** `--issue-grouping`. Tell it filing is approved and it must not ask again. It drops `speculative` findings unless `--include-speculative`, dedupes, clusters, and files `priority:*` issues labelled `sweep`. Capture the created-issue table plus the findings→issues collapse.
 
 If `--depth file`: stop. Report the issues filed and the exact `/fix-issues` command to continue.
 
 ### 4. Gate — fix?
 
-At `--depth fix`, load `fix-issues`' planning step and show the **stack plan**: layers, grouped issues, and a **file-disjoint** split (`--stacks`, cap `--max-layers`). Ask once — `--pr-grouping`, stack count/size, batch — and proceed only on approval. Pass that approval down; `fix-issues` must not ask again.
+At `--depth fix`, run `fix-issues`' planning steps (1–2) and show the **stack plan**: layers, grouped issues, and a **file-disjoint** split (`--stacks`, cap `--max-layers`). Ask once — `--pr-grouping`, stack count/size, batch — and proceed only on approval. Pass that approval down; `fix-issues` must not ask again.
 
 ### 5. Fix — delegate to `fix-issues`
 
-Load the **`fix-issues`** skill and run it on the approved plan (`--pr-grouping`, `--max-layers`, `--stacks`, run id, scope). The plan is already approved — it must not re-ask. It builds one `gh-stack` chain per file-disjoint stack and opens the PRs.
+Run **`fix-issues`** on the approved plan (`--pr-grouping`, `--max-layers`, `--stacks`, run id, scope). The plan is already approved — it must not re-ask. It builds one `gh-stack` chain per file-disjoint stack and opens the PRs.
 
 If `--depth fix`: stop. Report the stack(s) — layers, grouped issues, PRs — and the exact `/review-issues` command listing **every** PR number, not `--stack` (that is only the stack currently checked out).
 
@@ -131,7 +135,7 @@ At `--depth review`, list the PRs from **every** stack this run opened and confi
 
 ### 7. Review — delegate to `review-issues`
 
-Load the **`review-issues`** skill and hand it the PR list from every stack. It reviews each PR in a fresh context and posts every finding as a PR comment ending in a copy-pasteable, verify-first agent instruction. It posts only; it never pushes or merges. Capture both handoff lists: **on-layer** and **out-of-scope**.
+Run **`review-issues`** and hand it the PR list from every stack. It reviews each PR in a fresh context and posts every finding as a PR comment ending in a copy-pasteable, verify-first agent instruction. It posts only; it never pushes or merges. Capture both handoff lists: **on-layer** and **out-of-scope**.
 
 ### 8. Gate — what to do with review findings?
 
@@ -181,7 +185,7 @@ End with one cycle summary:
 
 ## Rules
 
-- Thin coordinator: delegate to `find-problems`, `create-issues`, `fix-issues`, `review-issues`; never re-implement them.
+- Thin coordinator: delegate to `find-problems`, `create-issues`, `fix-issues`, `review-issues` by reading their sibling `SKILL.md`; never re-implement them.
 - Gates are on by default; only `--yes` bypasses them.
 - Each phase is resumable for **this run id** only. Never treat the open `priority:*` backlog as this run, and never re-file an issue this run already filed.
 - Ask each decision once. Children do not repeat sweep's questions.
