@@ -10,6 +10,7 @@
 /fix-issues --priority medium     # include medium
 /fix-issues 42 47 51              # exactly these, in that order bottom→top
 /fix-issues --scope storage       # only issues stamped scope:storage (exact; not storage-legacy)
+/fix-issues --scope .             # only issues stamped scope:repo
 /fix-issues --resume sweep-20261014-0930-k3f9
 ```
 
@@ -120,7 +121,7 @@ medium and low work behind it. Re-run after answering the question on the issue.
 | Second stack will not merge | it shares files with the first | it should not have been a second stack; re-plan |
 | `checkout` never returns | you ran it with no argument | Ctrl-C, then pass a branch/PR/stack number |
 | Layer 3 needs a change from layer 1 | wrong layer | `gh stack down`, commit there, `gh stack rebase --upstack`, `gh stack top` |
-| PRs come out unlabelled | the label step was skipped, or label creation was denied | give each PR its layer's issue labels with one highest `priority:*` — `gh pr edit <n> --add-label "priority:medium,bug"` |
+| PRs come out unlabelled | the label step was skipped, or label creation was denied | give each PR its layer's issue labels with one highest `priority:*` — `gh pr edit <n> --repo <owner/repo> --add-label "priority:medium,bug"` |
 
 ## What this skill will not do
 

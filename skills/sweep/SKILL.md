@@ -85,7 +85,7 @@ Never file issues or open PRs without either the gate answered yes or `--yes` se
 
 ### 0. Scope
 
-Confirm the target repo (`gh repo view --json nameWithOwner`), then resolve the scope. No scope means the whole repo — that is the default, not a fallback.
+Confirm the target repo — `gh repo view --json nameWithOwner --jq .nameWithOwner`, or the user's pick for a fork or upstream — and record it as `owner/repo`. Confirming does not change the repo `gh` defaults to, so pass it to every child, which names it with `--repo` on every `gh` call. Then resolve the scope. No scope, `.`, or the repo root means the whole repo — that is the default, not a fallback.
 
 A scope is one of three things; resolve it to an explicit path set before scanning:
 
@@ -95,13 +95,15 @@ A scope is one of three things; resolve it to an explicit path set before scanni
 | a module name | match it against the build files from `find-problems` (`settings.gradle`, `pom.xml`, `package.json` workspaces, `go.mod`, `Cargo.toml`), including a submodule or package | `--scope directwerk-digital` |
 | a feature term | search for the name across source, dirs, and config, and collect the paths it really names | `--scope feed-builder` |
 
-Print the resolved set and the modules it covers (`Scope: 4 modules, 37 files — <paths>`), then confirm it in one line before scanning. If a term resolves to **nothing**, or to the whole repo, **stop and say so** — never quietly widen a narrow run to the whole repo. Offer the closest matches and ask.
+Print the resolved set and the modules it covers (`Scope: 4 modules, 37 files — <paths>`), then confirm it in one line before scanning. If a term resolves to **nothing**, or anything but `.` resolves to the whole repo, **stop and say so** — never quietly widen a narrow run to the whole repo. Offer the closest matches and ask.
 
-Derive the **scope token** for the run marker — the scope term slugified, or `repo` (`create-issues` defines it). Issues carry `scope:<token>` in the marker and the resolved paths in their metadata, so they say what they came from and `fix-issues --scope` matches them exactly. A scoped run still mints its run id.
+**Scope token** — one space-free token for the `scope:` marker, matched exactly. No scope, or the repo root (`.`, `./`, the top-level path) → `repo`. Otherwise the scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-`: `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). An empty result (`..`, `/`) is rejected: stop and ask for a nameable scope — never stamp or match an empty `scope:`.
 
-Mint a run id, `sweep-YYYYMMDD-HHMM-<4 random [a-z0-9]>` (e.g. `sweep-20261014-0930-k3f9`, minted as in `create-issues`), and pass it, the scope token, and the resolved paths to every child. Issues filed this run carry both (see `create-issues`). Resume keys off this id — never off "any open `priority:*` issue".
+Issues carry `scope:<token>` in the marker and the resolved paths in their metadata, so they say what they came from and `fix-issues --scope` matches them exactly. A scoped run still mints its run id.
 
-Run state lives in `$(git rev-parse --git-common-dir)/sweep/<run-id>/` — untracked, beside gh-stack's own metadata, so a later session can resume but nothing reaches a commit. It holds `report.md` (phase 1, headed by the run id, scope token, and resolved paths), `stacks.md` (written by `fix-issues`), and `review.md` (phase 7).
+Mint a run id, `sweep-YYYYMMDD-HHMM-<4 random [a-z0-9]>` (e.g. `sweep-20261014-0930-k3f9`, minted as in `create-issues`), and pass it, the repo, the scope token, and the resolved paths to every child. Issues filed this run carry both (see `create-issues`). Resume keys off this id — never off "any open `priority:*` issue".
+
+Run state lives in `$(git rev-parse --git-common-dir)/sweep/<run-id>/` — untracked, beside gh-stack's own metadata, so a later session can resume but nothing reaches a commit. It holds `report.md` (phase 1, headed by the run id, repo, scope token, and resolved paths), `stacks.md` (written by `fix-issues`), and `review.md` (phase 7).
 
 ### 1. Find — delegate to `find-problems`
 
@@ -117,7 +119,7 @@ Summarize per `Gates` above and ask the one file question (file? which `--issue-
 
 ### 3. Create — delegate to `create-issues`
 
-Run **`create-issues`** and hand it the report, the run id, the scope token and resolved paths (stamped into every body), `--priority`, `--max`, and the **already chosen** `--issue-grouping`. Tell it filing is approved and it must not ask again. It drops `speculative` findings unless `--include-speculative`, dedupes, clusters, applies the caps, and files `priority:*` issues labelled `sweep`. Capture the created-issue table plus the findings→issues collapse.
+Run **`create-issues`** and hand it the report, the run id, the repo, the scope token and resolved paths (stamped into every body), `--priority`, `--max`, and the **already chosen** `--issue-grouping`. Tell it filing is approved and it must not ask again. It drops `speculative` findings unless `--include-speculative`, dedupes, clusters, applies the caps, and files `priority:*` issues labelled `sweep`. Capture the created-issue table plus the findings→issues collapse.
 
 If `--depth file`: stop. Report the issues filed and the exact `/fix-issues` command to continue.
 
@@ -127,7 +129,7 @@ At `--depth fix`, run `fix-issues`' planning steps (1–2) and show the **stack 
 
 ### 5. Fix — delegate to `fix-issues`
 
-Run **`fix-issues`** on the approved plan (`--pr-grouping`, `--max-layers`, `--stacks`, `--priority`, `--max`, run id, scope token). The plan is already approved — it must not re-ask. It builds one `gh-stack` chain per file-disjoint stack, opens the PRs, and records them in `stacks.md`.
+Run **`fix-issues`** on the approved plan (`--pr-grouping`, `--max-layers`, `--stacks`, `--priority`, `--max`, run id, repo, scope token). The plan is already approved — it must not re-ask. It builds one `gh-stack` chain per file-disjoint stack, opens the PRs, and records them in `stacks.md`.
 
 If `--depth fix`: stop. Report the stack(s) — layers, grouped issues, PRs — and the exact `/review-issues` command listing **every** PR number, not `--stack` (that is only the stack currently checked out).
 
@@ -137,7 +139,7 @@ At `--depth review`, list the PRs from **every** stack this run opened and confi
 
 ### 7. Review — delegate to `review-issues`
 
-Run **`review-issues`** and hand it the PR list from every stack. It reviews each PR in a fresh context and posts every finding as a PR comment ending in a copy-pasteable, verify-first agent instruction. It posts only; it never pushes or merges. Capture both handoff lists: **on-layer** and **out-of-scope**, and save them to `review.md` in the run state.
+Run **`review-issues`** and hand it the repo and the PR list from every stack. It reviews each PR in a fresh context and posts every finding as a PR comment ending in a copy-pasteable, verify-first agent instruction. It posts only; it never pushes or merges. Capture both handoff lists: **on-layer** and **out-of-scope**, and save them to `review.md` in the run state.
 
 ### 8. Gate — what to do with review findings?
 
@@ -150,8 +152,8 @@ Ask once, in two parts:
 
 ### 9. Close the loop — on the layer, or as a new issue
 
-- **On-layer, user said yes:** delegate to `fix-issues` in on-layer mode. It checks out the existing branch, commits there, rebases upstack, and updates the open PR. It must not `gh stack init` and must not file an issue.
-- **Out-of-scope, user said yes:** delegate to `create-issues` with the run id. It dedupes, maps severity to `priority:*` (blocker/major → high, minor → medium, nit → low), and files only those. Then print the `/fix-issues` command. Do not start that fix in this same run — one review round per sweep.
+- **On-layer, user said yes:** delegate to `fix-issues` in on-layer mode, with the repo. It checks out the existing branch, commits there, rebases upstack, and updates the open PR. It must not `gh stack init` and must not file an issue.
+- **Out-of-scope, user said yes:** delegate to `create-issues` with the run id and the repo. It dedupes, maps severity to `priority:*` (blocker/major → high, minor → medium, nit → low), and files only those. Then print the `/fix-issues` command. Do not start that fix in this same run — one review round per sweep.
 
 Findings already dismissed (a resolved thread, or a maintainer's rejection — see `review-issues`) are excluded. This run stops after one review round; it does not review the review-fix.
 

@@ -41,9 +41,13 @@ run that silently widens is how you get 40 unrelated issues.
 
 With `--scope`, findings outside it are not reported, issues outside it are not filed, and
 `fix-issues` will not pick them up. Every issue carries a scope token in its marker — the term
-slugified, `scope:storage` for `--scope storage`, `scope:repo` with none — and the resolved paths
-in its metadata, so a scoped batch stays scoped even weeks later. `/fix-issues --scope storage`
-matches that token exactly; `scope:storage-legacy` is a different scope.
+slugified, `scope:storage` for `--scope storage`, `scope:repo` with none or `.` — and the resolved
+paths in its metadata, so a scoped batch stays scoped even weeks later. `/fix-issues --scope
+storage` matches that token exactly; `scope:storage-legacy` is a different scope. A scope that
+slugifies to nothing (`..`, `/`) is refused, never stamped as an empty `scope:`.
+
+The repo you confirm at the start (a fork or its upstream) is passed to every phase, and every
+`gh` call names it with `--repo`, so issues and PRs never land in `gh`'s default repo by accident.
 
 ## Resuming
 

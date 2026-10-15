@@ -41,7 +41,7 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 
 | Flag | Effect |
 | --- | --- |
-| `--scope <path\|module\|feature>` (or a bare positional) | narrow the run to one module or area; the default is the whole repo. Resolved to an explicit path set and confirmed before scanning |
+| `--scope <path\|module\|feature>` (or a bare positional) | narrow the run to one module or area; the default (or `.`) is the whole repo. Resolved to an explicit path set and confirmed before scanning |
 | `--issue-grouping recommended\|coarse\|strict` | how findings become issues. Asked once, at the file gate |
 | `--pr-grouping recommended\|strict\|coarse` | how issues become PRs. A separate knob — `coarse` on both double-folds |
 | `--grouping <level>` | shorthand that sets both grouping knobs to the same level |
