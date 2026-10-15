@@ -50,7 +50,8 @@ rebase and repost the same finding.
 
 A finding counts as dismissed when its review thread is resolved or a maintainer (`OWNER`,
 `MEMBER`, `COLLABORATOR`) rejected it in a reply. A drive-by "this is fine" from anyone else is
-read as context, not as a dismissal.
+read as context, not as a dismissal. Every review thread and reply is read (paginated), so a
+long-running PR cannot hide an old marker or dismissal past the first page.
 
 ## The two handoff lists
 
@@ -60,7 +61,8 @@ Every pass ends with:
   on the branch. They are *not* filed as issues; a new issue starts a second stack from trunk and
   forks the work off the PR that was reviewed.
 - **Out-of-scope findings** — a new bug the diff happened to expose, outside this PR's acceptance
-  criteria. These go to `/create-issues`.
+  criteria. These, and only these, go to `/create-issues`, which keeps each fingerprint and uses
+  the entry's `group` slug as the issue's cluster key. Dismissed findings are left out.
 
 Both are grouped by fix surface, and a long tail of `nit`s is rolled up into one entry. A review
 that posts twelve comments must not become twelve issues.

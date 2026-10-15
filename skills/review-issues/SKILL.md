@@ -60,10 +60,13 @@ gh pr list --repo "$R" --state open --author "@me" --json number,title,headRefNa
 ```bash
 gh pr view <n> --repo "$R" --json number,title,body,files,commits,headRefOid,baseRefName,comments
 gh pr diff <n> --repo "$R"
-gh api graphql -f o="${R%/*}" -f r="${R#*/}" -F n=<n> -f query='query($o:String!,$r:String!,$n:Int!){
-  repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{
-    isResolved path line comments(first:50){nodes{body authorAssociation}}}}}}}'
+gh api graphql --paginate -f o="${R%/*}" -f r="${R#*/}" -F n=<n> -f query='query($o:String!,$r:String!,$n:Int!,$endCursor:String){
+  repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100,after:$endCursor){
+    pageInfo{hasNextPage endCursor} nodes{isResolved path line
+    comments(first:100){totalCount nodes{body authorAssociation}}}}}}}'
 ```
+
+`--paginate` reads every thread. A thread whose `totalCount` exceeds 100 has more replies: read it in full (`gh api --paginate "repos/$R/pulls/<n>/comments"`) before deciding it holds no marker or dismissal.
 
 Read the linked issue (`Fixes #<n>`) for the acceptance criteria, and the repo's `AGENTS.md` / `CONTRIBUTING.md`. From the existing comments and review threads, build two lists before reviewing:
 
@@ -209,10 +212,10 @@ Group same-surface findings into one entry, and roll up a long tail of same-kind
 - fingerprint: review-issues:<hash> · severity: <blocker|major|minor|nit> · PR: #<n> · location: <path>:<line>
   claim: <one sentence: a bug this PR did not introduce and does not own>
   suggested fix: <the minimal concrete fix>
-  group: <shared-surface key> — entries sharing a group become ONE issue
+  group: <shared-surface slug, e.g. unchecked-presign-key> — the issue's cluster key; entries sharing it become ONE issue
 `````
 
-`/create-issues` maps severity to priority: `blocker`/`major` → `priority:high`, `minor` → `priority:medium`, `nit` → `priority:low`. Exclude anything dismissed (step 2). Do not put an on-layer finding in the out-of-scope list to "make sure it gets fixed" — that is how the second stack happens.
+`/create-issues` files this out-of-scope list and nothing else, keeping each fingerprint and using `group` as the cluster key. It maps severity to priority: `blocker`/`major` → `priority:high`, `minor` → `priority:medium`, `nit` → `priority:low`. Exclude anything dismissed (step 2). Do not put an on-layer finding in the out-of-scope list to "make sure it gets fixed" — that is how the second stack happens.
 
 ## Watch mode
 
