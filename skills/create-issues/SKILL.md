@@ -24,9 +24,13 @@ Practical how-to — sources, the grouping levels, rollups, labels, dedupe behav
 
 | Arg | Meaning | Default |
 | --- | --- | --- |
-| `--scope <path\|module\|feature>` | file only findings inside the scope; stamp it in the body | none (every finding) |
+| `--scope <path\|module\|feature>` | file only findings inside the scope; stamp its token in the marker | none (`scope:repo`) |
 | `--issue-grouping` | `recommended` · `coarse` · `strict` | `recommended` |
+| `--priority` | lowest priority to file (`high` = only high), applied after clustering | `low` |
+| `--max` | cap on issues filed, applied after clustering — whole clusters only | all |
 | `--include-speculative` | file `confidence: speculative` findings too | off |
+
+**Scope token.** The marker carries one space-free token, so `/fix-issues --scope` can match it exactly: the caller's scope term(s) lowercased, each run of characters outside `[a-z0-9]` turned into `-`, and trimmed of `-` — `printf '%s' "$terms" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'` (`feed builder` → `feed-builder`). No scope → `repo`. The resolved path set goes in the metadata comment (`scope-paths:`), never in the token.
 
 ## Preconditions
 
@@ -62,13 +66,15 @@ When a scope is given, drop every finding whose locations fall outside it — a 
 Search before drafting — **open and closed**, so a regression of a fixed issue is a deliberate new issue linked to the old one, never a blind duplicate:
 
 ```
-gh issue list --state all --search "<key terms>" --limit 20 --json number,title,state,labels,url
+gh issue list --state all --search '"cluster:<key>" in:body' --json number,title,state,stateReason,url
+gh issue list --state all --search "<key terms>" --limit 20 --json number,title,state,stateReason,labels,url
 ```
 
-Match on the concept, not the wording.
+A prior issue carrying the same `cluster:<key>` marker is the strongest signal — the same root cause, already filed. Otherwise match on the concept, not the wording.
 
 - An open issue covers it → skip it and name the issue that covers it.
-- A closed issue matches → file only when the problem is genuinely back (a regression) and link it (`Regressed in #<old>`). Do not re-file a closed issue that was fixed and has not recurred.
+- A closed issue with `stateReason` `NOT_PLANNED` matches → never re-file; it was rejected. List it as skipped: `rejected in #<n>`.
+- A closed, completed issue matches → file only when the problem is genuinely back (a regression) and link it (`Regressed in #<old>`). Do not re-file a closed issue that was fixed and has not recurred.
 
 ## 3. Cluster related findings
 
@@ -122,9 +128,11 @@ This is **issue** grouping (`--issue-grouping`). It does not decide PR grouping;
 
 Drop every finding with `confidence: speculative` unless the caller passed `--include-speculative` or the user, after seeing the list, asked to file them. List the dropped ones under skipped. A `file:line` is not enough to file a guess.
 
-## 4. Classify
+## 4. Classify, then cap
 
 Assign exactly one priority label from the table. When torn, pick the lower one only if the impact is cosmetic; otherwise pick the higher one and say why in the body.
+
+Then apply the caller's caps to the **issues**, never to findings: drop clusters below `--priority`, and with `--max N` keep the first N issues — highest priority first, then larger clusters. A cluster is filed whole or deferred; never cut one to fit. List what was dropped or deferred under skipped.
 
 ## 5. Verify and expand (read-only)
 
@@ -209,9 +217,10 @@ Optional. Risk of the change, migration or compatibility notes, and how to rever
 ## Related
 Optional. `Related to #123` / `Part of #456` when the issue sits beside a distinct one.
 
-<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->
+<!-- sweep-run:<id> scope:<token> cluster:<key> -->
 <!-- metadata, keep for /fix-issues: category: <bug|security|refactor|over-engineering|
-dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely> -->
+dead-code|test-gap|perf> · effort: <S|M|L> · confidence: <confirmed|likely> ·
+scope-paths: <resolved paths, or repo> -->
 ````
 
 Rules for bodies:
@@ -227,16 +236,17 @@ Rules for bodies:
 
 Present one table — priority, title, evidence, cluster size, collapse (`N findings → M issues`) — and, if this skill was invoked on its own, ask **once** for the grouping level and the go-ahead together. If `/sweep` already approved filing, create without asking. A "just file them" said before the table was shown does not skip the question; an approval after the table does.
 
-Then ensure the labels exist and create the issues:
+Then ensure the labels exist — create only the missing ones — and create the issues:
 
 ```
-gh label create "priority:high"   --color B60205 --force
-gh label create "priority:medium" --color D93F0B --force
-gh label create "priority:low"    --color 0E8A16 --force
-gh label create "sweep"           --color 1D76DB --force
+gh label list --limit 500 --json name --jq '.[].name'
+gh label create "priority:high"   --color B60205
+gh label create "priority:medium" --color D93F0B
+gh label create "priority:low"    --color 0E8A16
+gh label create "sweep"           --color 1D76DB
 ```
 
-`--force` makes label creation idempotent. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither) and report the exact commands a maintainer must run. Never let a missing label cost you the issue. If the caller passed no run id, mint `sweep-YYYYMMDD-HHMM` and print it — every body still gets `<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->`, with `scope:repo` when none was given.
+Never `--force`: it overwrites an existing label's color and description. If a label cannot be created, do not abort: file with the labels that exist (`priority:*` without `sweep`, or with neither) and report the exact commands a maintainer must run. Never let a missing label cost you the issue. If the caller passed no run id, mint one — `sweep-$(date +%Y%m%d-%H%M)-$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c4)` — and print it. Every body gets `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`, with `scope:repo` when none was given.
 
 Create issues one at a time so each returned URL is captured:
 
@@ -248,20 +258,22 @@ EOF
 
 ## 8. Report
 
-Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; merged → the issue that folded it in). Give counts per priority and the raw-findings → issues ratio. This table is the handoff to `/fix-issues`.
+Print a table of what was created: priority, `#number`, title, URL, cluster size. List what was skipped and why (duplicate → existing issue; rejected → `rejected in #<n>`; merged → the issue that folded it in; below `--priority` or past `--max` → deferred). Give counts per priority and the raw-findings → issues ratio. This table is the handoff to `/fix-issues`.
 
 ## Rules
 
 - An empty batch is a valid outcome. If nothing clears the bar, file nothing and say so — never file an issue to justify the run.
 - Never file an issue without evidence.
-- Never duplicate an open issue.
+- Never duplicate an open issue, and never re-file one closed as not planned.
 - Cluster before drafting: one issue per root cause, not one per site. Merge repeated findings; split only for a named reason (different root cause, blast radius, or shipping).
 - Every instance of a cluster is listed in the issue; grouping never drops a finding.
 - Write the mechanism, not the symptom: verify the cited code (read-only), state input → wrong outcome → root cause, and give a concrete `Suggested fix`. A thin body is a bug in this skill.
 - Detail is mechanism and reproduction, never filler. Do not pad, repeat evidence, or speculate beyond what you verified.
 - Exactly one priority label per issue; a cluster takes its highest member's priority.
+- `--priority` and `--max` apply to issues after clustering. Never cut a cluster to fit the cap.
+- Create only missing labels; never `gh label create --force`.
 - Ask the grouping level once, and only when this skill was invoked on its own. Sweep's answer is final.
 - Never file `confidence: speculative` unless the user opted in after seeing it.
-- Stamp every body with `<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->`. That marker is how a later run resumes this batch, and how `fix-issues` picks a scoped batch.
+- Stamp every body with `<!-- sweep-run:<id> scope:<token> cluster:<key> -->`. That marker is how a later run resumes this batch, how `fix-issues` picks a scoped batch (exact token match), and how a later dedupe finds this cluster.
 - Offer a rollup for a long tail of same-kind nits instead of a river of near-identical issues.
 - Never touch code, branches, or PRs — this skill only writes issues.

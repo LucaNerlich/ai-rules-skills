@@ -58,7 +58,7 @@ The children sit beside this skill: `install.sh` installs `find-problems`, `crea
 | `--resume <id>` | continue the run stamped `sweep-run:<id>`, not the rest of the backlog | off |
 | `--yes` | skip the questions and use the flag values | off |
 
-`--max` counts **issues, not findings**, and is applied *after* `create-issues` clusters the report — every instance of a cluster stays inside its issue or the whole cluster is deferred. Never cut a cluster in half to satisfy the cap.
+`--max` counts **issues, not findings**. `create-issues` owns the cap: sweep passes `--priority` and `--max` down, and it applies them *after* clustering — every instance of a cluster stays inside its issue or the whole cluster is deferred. Never cut a cluster in half to satisfy the cap.
 
 `--scope` narrows every phase, not just the scan: findings outside it are not reported, issues outside it are not filed, and `fix-issues` does not pick them up. With no scope the run is repo-wide, as before.
 
@@ -74,7 +74,7 @@ Sweep owns the questions. When it calls a child, it passes the answers already c
 
 Four checkpoints. `--yes` skips the question and uses the flag values; it does not change what those values mean.
 
-- **After the report:** if the verdict is `CLEAN`, report it and **stop the run** — do not open issues, fix, or review to justify the scan. Otherwise show the summary (resolved scope, counts per priority and category, modules covered, top findings, speculative excluded) and ask **once**: file these, and at which `--issue-grouping`? On no → print the report and stop; the run is complete at `depth=report`.
+- **After the report:** if the verdict is `CLEAN`, report it and **stop the run** — do not open issues, fix, or review to justify the scan. Otherwise show the summary (resolved scope, counts per priority and category, modules covered, top findings, speculative excluded, projected issue count) and ask **once**: file these, and at which `--issue-grouping`? On no → print the report and stop; the run is complete at `depth=report`.
 - **Before fixing:** show the **stack plan** — layers, which issues share a PR, and the file-disjoint split — and ask **once** about `--pr-grouping`, stack count/size, and the batch. On no → stop after filing; the run is complete at `depth=file`. Reached at `depth=fix` and `depth=review`.
 - **Before reviewing:** show the PRs across **every** stack this run opened (not only the current `gh stack`) and ask whether to post comments. On no → stop; the run is complete at `depth=fix`. Only reached at `depth=review`.
 - **After reviewing:** split findings into on-layer and out-of-scope (below) and ask. On no → stop; the run is complete at `depth=review`.
@@ -97,13 +97,15 @@ A scope is one of three things; resolve it to an explicit path set before scanni
 
 Print the resolved set and the modules it covers (`Scope: 4 modules, 37 files — <paths>`), then confirm it in one line before scanning. If a term resolves to **nothing**, or to the whole repo, **stop and say so** — never quietly widen a narrow run to the whole repo. Offer the closest matches and ask.
 
-Keep the scope string for the run marker (`scope:<resolved>`), so issues say what they came from and a later `--resume` can tell. A scoped run still mints its run id.
+Derive the **scope token** for the run marker — the scope term slugified, or `repo` (`create-issues` defines it). Issues carry `scope:<token>` in the marker and the resolved paths in their metadata, so they say what they came from and `fix-issues --scope` matches them exactly. A scoped run still mints its run id.
 
-Mint a run id, `sweep-YYYYMMDD-HHMM`, and pass it and the resolved scope to every child. Issues filed this run carry both (see `create-issues`). Resume keys off this id — never off "any open `priority:*` issue".
+Mint a run id, `sweep-YYYYMMDD-HHMM-<4 random [a-z0-9]>` (e.g. `sweep-20261014-0930-k3f9`, minted as in `create-issues`), and pass it, the scope token, and the resolved paths to every child. Issues filed this run carry both (see `create-issues`). Resume keys off this id — never off "any open `priority:*` issue".
+
+Run state lives in `$(git rev-parse --git-common-dir)/sweep/<run-id>/` — untracked, beside gh-stack's own metadata, so a later session can resume but nothing reaches a commit. It holds `report.md` (phase 1, headed by the run id, scope token, and resolved paths), `stacks.md` (written by `fix-issues`), and `review.md` (phase 7).
 
 ### 1. Find — delegate to `find-problems`
 
-Run **`find-problems`** (see *Running a child*) over the **resolved scope**. It scans module-by-module under the Ponytail lens and returns the findings report. Pass the scope so it maps only those modules and says what it left out. Do not re-scan or re-derive findings here.
+Run **`find-problems`** (see *Running a child*) over the **resolved scope**. It scans module-by-module under the Ponytail lens and returns the findings report. Pass the scope so it maps only those modules and says what it left out. Do not re-scan or re-derive findings here. Save the report to `report.md` in the run state.
 
 If `--depth report`: print the report and stop.
 
@@ -111,11 +113,11 @@ If the report's verdict is `CLEAN`, the run is over: say so, file nothing, open 
 
 ### 2. Gate — file?
 
-Summarize per `Gates` above and ask the one file question (file? which `--issue-grouping`?). Apply `--priority` and `--max` **after clustering**. Say how many `speculative` findings were excluded. Do not ask again inside `create-issues`.
+Summarize per `Gates` above and ask the one file question (file? which `--issue-grouping`?). Show the **projected issue count**: distinct `cluster` keys in the report at `recommended` (rollups count once), then what is left after `--priority` and `--max`. Say how many `speculative` findings were excluded. Do not ask again inside `create-issues`.
 
 ### 3. Create — delegate to `create-issues`
 
-Run **`create-issues`** and hand it the report, the run id, the resolved scope (stamped into every body), and the **already chosen** `--issue-grouping`. Tell it filing is approved and it must not ask again. It drops `speculative` findings unless `--include-speculative`, dedupes, clusters, and files `priority:*` issues labelled `sweep`. Capture the created-issue table plus the findings→issues collapse.
+Run **`create-issues`** and hand it the report, the run id, the scope token and resolved paths (stamped into every body), `--priority`, `--max`, and the **already chosen** `--issue-grouping`. Tell it filing is approved and it must not ask again. It drops `speculative` findings unless `--include-speculative`, dedupes, clusters, applies the caps, and files `priority:*` issues labelled `sweep`. Capture the created-issue table plus the findings→issues collapse.
 
 If `--depth file`: stop. Report the issues filed and the exact `/fix-issues` command to continue.
 
@@ -125,7 +127,7 @@ At `--depth fix`, run `fix-issues`' planning steps (1–2) and show the **stack 
 
 ### 5. Fix — delegate to `fix-issues`
 
-Run **`fix-issues`** on the approved plan (`--pr-grouping`, `--max-layers`, `--stacks`, run id, scope). The plan is already approved — it must not re-ask. It builds one `gh-stack` chain per file-disjoint stack and opens the PRs.
+Run **`fix-issues`** on the approved plan (`--pr-grouping`, `--max-layers`, `--stacks`, `--priority`, `--max`, run id, scope token). The plan is already approved — it must not re-ask. It builds one `gh-stack` chain per file-disjoint stack, opens the PRs, and records them in `stacks.md`.
 
 If `--depth fix`: stop. Report the stack(s) — layers, grouped issues, PRs — and the exact `/review-issues` command listing **every** PR number, not `--stack` (that is only the stack currently checked out).
 
@@ -135,7 +137,7 @@ At `--depth review`, list the PRs from **every** stack this run opened and confi
 
 ### 7. Review — delegate to `review-issues`
 
-Run **`review-issues`** and hand it the PR list from every stack. It reviews each PR in a fresh context and posts every finding as a PR comment ending in a copy-pasteable, verify-first agent instruction. It posts only; it never pushes or merges. Capture both handoff lists: **on-layer** and **out-of-scope**.
+Run **`review-issues`** and hand it the PR list from every stack. It reviews each PR in a fresh context and posts every finding as a PR comment ending in a copy-pasteable, verify-first agent instruction. It posts only; it never pushes or merges. Capture both handoff lists: **on-layer** and **out-of-scope**, and save them to `review.md` in the run state.
 
 ### 8. Gate — what to do with review findings?
 
@@ -151,13 +153,14 @@ Ask once, in two parts:
 - **On-layer, user said yes:** delegate to `fix-issues` in on-layer mode. It checks out the existing branch, commits there, rebases upstack, and updates the open PR. It must not `gh stack init` and must not file an issue.
 - **Out-of-scope, user said yes:** delegate to `create-issues` with the run id. It dedupes, maps severity to `priority:*` (blocker/major → high, minor → medium, nit → low), and files only those. Then print the `/fix-issues` command. Do not start that fix in this same run — one review round per sweep.
 
-Findings a human already dismissed are excluded. This run stops after one review round; it does not review the review-fix.
+Findings already dismissed (a resolved thread, or a maintainer's rejection — see `review-issues`) are excluded. This run stops after one review round; it does not review the review-fix.
 
 ## Resume
 
 Resume only **this run**, never the standing backlog. A repo full of old `priority:*` issues is not a reason to skip the scan or to start fixing them.
 
-- A report already produced this session, or the user passes `--resume <run-id>` → skip phase 1 and reuse that report, keeping its scope. A `--scope` given with `--resume` that differs from the run's scope is a new run: say so rather than mixing them.
+- `--resume <run-id>` → read the run state (`$(git rev-parse --git-common-dir)/sweep/<run-id>/`). `report.md` replaces phase 1 and fixes the scope; `stacks.md` lists the run's PRs; `review.md` holds the handoff lists. A report already produced this session counts the same. A `--scope` given with `--resume` that differs from the run's scope is a new run: say so rather than mixing them.
+- No run state (another clone, or it was deleted) → find the run's issues by their marker and its PRs through each issue's linked PRs (`closedByPullRequestsReferences`), and say what could not be recovered — a lost report means re-scanning.
 - Issues carrying this run's `sweep-run:<id>` marker are already filed → skip to the fix gate for **those** issues only.
 - Issues of this run already in an open PR or on a `fix/<n>-*` branch → never re-fixed; `fix-issues` reports them as in flight. This also covers the `/fix-issues --resume <id>` printed after phase 9.
 - Out-of-scope review findings already filed under this run id → skip the re-file.
@@ -181,7 +184,7 @@ End with one cycle summary:
 - stack sizes: layers per stack, and why the batch was split that way
 - PR reviews: per PR, findings by severity and comments posted, or "not run"
 - review findings: on-layer (fixed here / left on the PR) and out-of-scope (new issue numbers, or "not filed")
-- run id and scope, so a later `/sweep --resume <id>` continues this run (and this scope) and no other
+- run id, scope token, and the run-state path, so a later `/sweep --resume <id>` continues this run (and this scope) and no other
 - what was skipped and why (including speculative, and any `sweep:blocked` issue that did not freeze the batch), plus the next command to continue
 
 ## Rules
@@ -192,7 +195,7 @@ End with one cycle summary:
 - Ask each decision once. Children do not repeat sweep's questions.
 - A review finding in the fix itself is committed onto that layer, or left as a PR comment. It is not a new issue and not a new stack. Only out-of-scope findings are filed.
 - `--issue-grouping` and `--pr-grouping` are different knobs. Do not pass one `coarse` into both unless the user set `--grouping`.
-- `--max` counts issues (post-clustering), never individual findings. Never cut a cluster in half.
+- `--max` counts issues (post-clustering), never individual findings. `create-issues` applies it and `--priority` after clustering. Never cut a cluster in half.
 - Stacks are file-disjoint — one per group of issues sharing files under `--stacks auto` — and capped at `--max-layers` (default 5). Never build a longer chain, and never a second stack that touches the same files, without the user raising the cap.
 - Never file an issue or open a PR to justify the run. A `CLEAN` report ends the cycle — zero findings is the expected result for code that is already fine.
 - Respect the scope in every phase: report, file, fix, review. A finding outside the scope is out of this run, not a finding.

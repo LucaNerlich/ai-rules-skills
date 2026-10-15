@@ -46,7 +46,8 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 | `--pr-grouping recommended\|strict\|coarse` | how issues become PRs. A separate knob — `coarse` on both double-folds |
 | `--max-layers N` | cap layers per stack (default 5). Overlap past the cap stays one stack |
 | `--stacks auto\|by-module\|by-priority\|N` | how the batch is split. Stacks share no files; `auto` makes one stack per group of issues that share files, so an unrelated blocker never holds another fix |
-| `--max N` | cap issues filed / fixed (counts issues, never cuts a cluster in half) |
+| `--max N` | cap issues filed / fixed (counts issues after clustering, never cuts a cluster in half) |
+| `--priority high\|medium\|low` | lowest priority to file and fix (default `low`) |
 | `--include-speculative` | also file `confidence: speculative` findings (off by default) |
 | `--fix-on-layer` | commit review fixes onto the open layer instead of leaving the comment |
 

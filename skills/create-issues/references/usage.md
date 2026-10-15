@@ -9,10 +9,14 @@
 /create-issues                      # infer the source (usually the last /find-problems report)
 /create-issues path/to/report.md    # a report or plan file you have
 /create-issues --scope storage      # only findings in one area
+/create-issues --priority medium --max 5   # at most 5 issues, high and medium only
 ```
 
 Inside `/sweep` you never invoke this directly — sweep passes the report, the run id, the scope,
-and the grouping level, and this skill files without asking again.
+the caps, and the grouping level, and this skill files without asking again.
+
+`--max` counts issues after clustering, not findings: a 9-instance cluster is one issue, filed
+whole or deferred whole.
 
 ## Where findings come from
 
@@ -53,32 +57,38 @@ fix` (approach, optional sketch, alternatives, out of scope), then acceptance cr
 Two footers are load-bearing:
 
 ```
-<!-- sweep-run:<id> scope:<resolved-or-repo> cluster:<key> -->
-<!-- metadata, keep for /fix-issues: category: ... · effort: S|M|L · confidence: ... -->
+<!-- sweep-run:<id> scope:<token> cluster:<key> -->
+<!-- metadata, keep for /fix-issues: category: ... · effort: S|M|L · confidence: ... · scope-paths: ... -->
 ```
 
-The first is how a later run resumes this batch and how `fix-issues` picks a scoped batch. Do not
-strip it when editing.
+The first is how a later run resumes this batch, how `fix-issues` picks a scoped batch, and how
+a later dedupe recognizes the cluster. The scope token is the scope term slugified (`--scope
+storage` → `scope:storage`, none → `scope:repo`), so `/fix-issues --scope storage` matches it
+exactly and never matches `scope:storage-legacy`. The resolved paths live in `scope-paths:`. Do
+not strip either footer when editing.
 
 ## Labels
 
-Requires `priority:high|medium|low` plus `sweep`. If you cannot create labels (no permission),
-the skill files unlabelled and prints the commands a maintainer must run — it will not abort.
+Requires `priority:high|medium|low` plus `sweep`. Only missing labels are created, never with
+`--force`, so an existing label keeps its color and description. If you cannot create labels (no
+permission), the skill files unlabelled and prints the commands a maintainer must run — it will
+not abort.
 
 ## Dedupe behaviour
 
-Searches open **and** closed issues.
+Searches open **and** closed issues, first for the same `cluster:<key>` marker, then by concept.
 
 - Open match → skipped, and the existing issue is named.
-- Closed match, problem genuinely back → filed with `Regressed in #<old>`.
-- Closed match, fixed and quiet → not re-filed.
+- Closed as not planned → never re-filed; skipped as `rejected in #<n>`.
+- Closed as completed, problem genuinely back → filed with `Regressed in #<old>`.
+- Closed as completed, fixed and quiet → not re-filed.
 
 ## Troubleshooting
 
 | Symptom | Cause | Do |
 | --- | --- | --- |
 | Far fewer issues than findings | clustering + rollups did their job | read the "N findings → M issues" line in the report |
-| A finding you wanted is missing | speculative, or outside `--scope` | `--include-speculative`, or widen the scope |
+| A finding you wanted is missing | speculative, outside `--scope`, below `--priority`, past `--max`, or rejected before | `--include-speculative`, widen the scope or caps; a `rejected in #n` finding stays rejected |
 | Issues created without labels | label creation was denied | run the printed `gh label create` commands |
 | Nothing filed | nothing cleared the bar, or the verdict was `CLEAN` | correct outcome — an empty batch is a valid result, not a failed run |
 | Duplicate filed anyway | titles differed but the concept matched | say so; the search matched on wording, not the root cause |

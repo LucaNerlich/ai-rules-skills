@@ -40,20 +40,27 @@ run that silently widens is how you get 40 unrelated issues.
 ## Scope is a contract, not a filter
 
 With `--scope`, findings outside it are not reported, issues outside it are not filed, and
-`fix-issues` will not pick them up. Every issue carries the scope in its body
-(`scope:<resolved>`), so a scoped batch stays scoped even weeks later.
+`fix-issues` will not pick them up. Every issue carries a scope token in its marker — the term
+slugified, `scope:storage` for `--scope storage`, `scope:repo` with none — and the resolved paths
+in its metadata, so a scoped batch stays scoped even weeks later. `/fix-issues --scope storage`
+matches that token exactly; `scope:storage-legacy` is a different scope.
 
 ## Resuming
 
-Each run gets an id, `sweep-YYYYMMDD-HHMM`, printed at the end and stamped into every issue it
-filed. Two ways to continue:
+Each run gets an id, `sweep-YYYYMMDD-HHMM-xxxx` (four random characters, so two runs in the same
+minute never collide), printed at the end and stamped into every issue it filed. Its state —
+the report, the stacks and PRs, the review handoff — is saved untracked under
+`.git/sweep/<id>/`, so you can continue from a new session:
 
 ```
-/sweep --resume sweep-20261014-0930      # continue exactly that run
+/sweep --resume sweep-20261014-0930-k3f9   # continue exactly that run
 ```
 
-- Session still open → it offers to reuse the report it already produced.
+- Run state present → it reuses the report and its scope, and the stacks it already opened.
 - Issues already filed under that run id → it skips straight to the fix gate for those.
+- Issues already in an open PR or on a `fix/<n>-*` branch → reported as in flight, never re-fixed.
+- Run state missing (another clone) → issues are found by marker and PRs through their links; a
+  lost report means a re-scan.
 
 A repo full of older `priority:*` issues is **not** a resume. If you want to work that backlog,
 that is `/fix-issues`, not `/sweep --resume`.

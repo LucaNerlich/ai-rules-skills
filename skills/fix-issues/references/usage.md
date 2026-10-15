@@ -9,8 +9,8 @@
 /fix-issues                       # next batch of priority:high, then ask
 /fix-issues --priority medium     # include medium
 /fix-issues 42 47 51              # exactly these, in that order bottom→top
-/fix-issues --scope storage       # only issues from a scoped sweep run
-/fix-issues --resume sweep-20261014-0930
+/fix-issues --scope storage       # only issues stamped scope:storage (exact; not storage-legacy)
+/fix-issues --resume sweep-20261014-0930-k3f9
 ```
 
 Inside `/sweep` you never invoke this directly — sweep passed the batch and the plan, so it builds
