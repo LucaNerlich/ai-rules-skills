@@ -52,6 +52,20 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 | `--include-speculative` | also file `confidence: speculative` findings (off by default) |
 | `--fix-on-layer` | commit review fixes onto the open layer instead of leaving the comment |
 
+## release-version
+
+`/release-version` cuts a release in **any** repo: it derives the bump from history, promotes the
+changelog, updates every version manifest and lockfile, commits, tags, and pushes — after showing a
+plan you approve. It adapts to Node, Maven, Gradle, Cargo, Python, .NET, Go, PHP, Ruby, Elixir,
+Helm, Tauri/Electron, and tag-only projects; `skills/release-version/references/ecosystems.md` is
+the per-ecosystem table, `references/usage.md` the walkthrough. `gh` is optional: when installed and
+authenticated it resolves the repo and default branch, creates the GitHub Release (`--release`), and
+turns a protected-branch release into a PR; without it the skill degrades to plain git.
+
+```sh
+./install.sh --only release-version   # ship the skill + /release-version wrapper
+```
+
 ## pstack
 
 [`skills/pstack/`](skills/pstack/) is poteto's engineering bundle — 54 skills (`poteto-mode`,
