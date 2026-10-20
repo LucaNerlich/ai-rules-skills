@@ -3,17 +3,22 @@
 ## Install
 
 ```sh
-./install.sh            # sync skills + /command wrappers into every harness on this machine
-./install.sh --check    # report missing, changed, or stale files; change nothing, exit 1 if out of sync
-./install.sh --init     # also create command dirs where the harness has none
+./install.sh                     # sync the 4 harnesses this setup uses
+./install.sh --check             # report missing, changed, or stale files; change nothing
+./install.sh --list-harnesses    # show the resolved target set, change nothing
+./install.sh --harness claude    # add a harness by name or path (repeatable)
+./install.sh --all-harnesses     # discover every ~/.<name>/skills instead
+./install.sh --init              # also create command dirs where the harness has none
 ./install.sh --only sweep find-problems
 ```
 
-Harnesses are discovered as any `~/.<harness>/skills` or `~/.config/<harness>/skills`
-that already exists, so a renamed or uninstalled harness is skipped rather than guessed at.
-A skill ships its `SKILL.md` and everything under `references/`; a file left in an installed
-skill that the repo no longer ships is stale, and a sync removes it. Command wrappers point at
-the copy installed in the same harness.
+The default targets are `~/.agents`, `~/.copilot`, `~/.cursor`, and `~/.config/opencode`.
+`--harness <name|path>` adds one; a name resolves to `~/.<name>` or `~/.config/<name>`, and a
+path is used as-is. `--all-harnesses` restores the old discovery of any `$HOME/.<name>/skills`
+or `$HOME/.config/<name>/skills`, so a machine with other agents can still sync them. A skill
+ships its `SKILL.md` and everything under `references/`; a file left in an installed skill that
+the repo no longer ships is stale, and a sync removes it. Command wrappers point at the copy
+installed in the same harness.
 
 ## Sweep — the problem pipeline
 

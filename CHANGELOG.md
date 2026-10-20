@@ -36,6 +36,9 @@ All notable changes to this project will be documented in this file.
   messages and replies.
 - `fix-findings` fixed replies carry the pushed diff hash, so `/merge-prs` can tell a recorded fix
   from a change pushed after the fix.
+- `install.sh` now defaults to `~/.agents`, `~/.copilot`, `~/.cursor`, and `~/.config/opencode`;
+  `--harness` adds one, `--all-harnesses` restores discovery, and `--list-harnesses` prints the
+  resolved set.
 
 ## [1.0.0] - 2026-10-19
 
