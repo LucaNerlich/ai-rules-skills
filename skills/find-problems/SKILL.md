@@ -48,7 +48,7 @@ Do not report these, however tempting:
 - abstraction debates: extracting two duplicated lines, or inlining a single-implementation helper — each only a finding if a reader is measurably hurt
 - "no tests" when the behaviour is trivial or covered elsewhere
 - docs or wording polish with no wrong statement
-- a deliberate trade-off the code already names (a `ponytail:` marker, a comment explaining the ceiling) — that is a decision, not an oversight, unless it names no upgrade trigger or its ceiling is demonstrably hit (§3)
+- a deliberate trade-off the code already names (a `shortcut:` marker, or an older `ponytail:` one, plus a comment explaining the ceiling) — that is a decision, not an oversight, unless it names no upgrade trigger or its ceiling is demonstrably hit (§3)
 - anything the team has plainly already decided, or that an open ticket already covers
 - a thing that is merely **not how you would do it**, where what is there works and is clear
 
@@ -58,7 +58,7 @@ When in doubt, the answer is no finding. The cost of a wrong finding is a real i
 
 Every scan runs in **Ponytail, lazy senior dev mode**, because the goal is *correct and lean* code: fix the real bug at the root, and delete complexity rather than add more.
 
-The ruleset is **vendored** at [`references/ponytail.md`](references/ponytail.md) — the ladder, the rules, the "never lazy about" list, and the `review` / `audit` / `debt` finding formats and tags. It is a slim, pinned subset of Ponytail 4.9.0 (MIT, license text in [`references/ponytail.LICENSE`](references/ponytail.LICENSE)), so the lens travels with the skill into harnesses where the plugin is not installed.
+The ruleset is **vendored** at [`references/ponytail.md`](references/ponytail.md) — the before-you-write scope, the ladder, the rules, the "never cut" list, and the `review` / `audit` / `debt` finding formats and tags. It is a slim, pinned subset of Ponytail 5.3.2 (MIT, license text in [`references/ponytail.LICENSE`](references/ponytail.LICENSE)), so the lens travels with the skill into harnesses where the plugin is not installed.
 
 Prefer the installed Ponytail commands when they are present (they add the always-on mode and live state):
 
@@ -67,9 +67,9 @@ Prefer the installed Ponytail commands when they are present (they add the alway
 | Base mode for the session | `/ponytail full` (default; `ultra` for maximum deletion) |
 | Cross-module over-engineering audit (over the scope) | `/ponytail-audit` |
 | Over-engineering review of a diff/PR | `/ponytail-review` |
-| Harvest deferred `ponytail:` shortcuts | `/ponytail-debt` |
+| Harvest deferred `shortcut:` shortcuts (older `ponytail:` too) | `/ponytail-debt` |
 
-When they are absent, follow `references/ponytail.md` directly. Either way, **every finding is judged against Ponytail**, and every refactor suggestion must be the leanest *correct* version: `delete` > `shrink` > `reuse an existing helper` > `rewrite`. Correctness is never traded away — see the "Never lazy about" list in the reference.
+When they are absent, follow `references/ponytail.md` directly. Either way, **every finding is judged against Ponytail**, and every refactor suggestion must be the leanest *correct* version: `delete` > `shrink` (same logic, fewer lines) > `reuse an existing helper` > `rewrite`. Correctness is never traded away — see the "Never cut" list in the reference.
 
 **Before spawning subagents, read `references/ponytail.md` (it sits beside this SKILL.md) and paste its contents into every subagent prompt.** A subagent starts with fresh context and does not inherit the plugin's always-on injection, so the ruleset must travel in the prompt.
 
@@ -104,12 +104,13 @@ You are auditing the "<module>" module at "<path>" of <repo>. READ-ONLY: do not 
 files, create issues, or run mutating commands. Produce findings only.
 
 You operate in Ponytail, lazy senior dev mode: the goal is correct AND lean code. The
-complete ruleset — the ladder, the rules, the "never lazy about" list, and the finding
-formats — is appended to this prompt as PONYTAIL RULESET. Follow it: prefer deletion over
-addition and reuse over rewrite, fix root causes, and never trade away correctness. Its
-one-line output formats and closing lines (`net: ...`, `Lean already. Ship.`) do NOT apply
-here: report in the block format below and end with the closing line this prompt gives. Its
-tags (`delete`, `stdlib`, `native`, `yagni`, `shrink`) may appear inside a field.
+complete ruleset — the before-you-write scope, the ladder, the rules, the "never cut" list,
+and the finding formats — is appended to this prompt as PONYTAIL RULESET. Follow it: prefer
+deletion over addition and reuse over rewrite, fix root causes, and never trade away
+correctness. Its report formats and closing lines (`Verdict: ...`, `Lean: ...`,
+`Healthy. Nothing to fix.`) do NOT apply here: report in the block format below and end with
+the closing line this prompt gives. Its lean tags (`delete`, `reuse`, `stdlib`, `native`,
+`yagni`, `merge`, `split`) may appear inside a field.
 
 Scan for, in priority order:
 1. Correctness bugs: wrong operators/boundaries/off-by-one, null/None/undefined
@@ -135,9 +136,9 @@ A finding must be a real defect, a security/data/concurrency risk, or something 
 measurably reduces complexity a reader is paying for. It is NOT a finding if it is only:
 taste (naming, formatting, "I'd write it differently"), speculative flexibility ("could
 be more generic/extensible"), an abstraction debate with no concrete harm, a trivial or
-already-covered test gap, doc polish, or a trade-off the code already names (a
-`ponytail:` marker is a decision, not an oversight — unless it names no upgrade trigger
-or its named ceiling is demonstrably hit). If you cannot name the input or
+already-covered test gap, doc polish, or a trade-off the code already names (a `shortcut:`
+marker, or an older `ponytail:` one, is a decision, not an oversight — unless it names no
+upgrade trigger or its named ceiling is demonstrably hit). If you cannot name the input or
 state that triggers a wrong outcome, you do not have a finding — drop it.
 
 Output EXACTLY one block per finding. One line per field — real detail, never filler; these fields are the raw material `/create-issues` writes into the issue body, so state the mechanism rather than restating the title:
@@ -159,7 +160,7 @@ Output EXACTLY one block per finding. One line per field — real detail, never 
   production; data loss, security exposure, silent wrong result, or crash>
 - repro / detection: <the exact command, request, or steps that expose it, and observed vs
   expected — or "read-confirmed" plus how you confirmed it>
-- suggested fix: <the leanest correct change; delete/shrink/reuse before rewrite, name the
+- suggested fix: <the leanest correct change; delete/reuse/merge/split before rewrite, name the
   types and behaviours, say what it does NOT touch>
 - alternatives: <optional: the heavier or tempting fix and why it is not the right one>
 - effort: S | M | L
@@ -183,13 +184,13 @@ the clean line above when N is 0. Do not return 0 findings and then append "obse
 
 ## 3. Ponytail passes
 
-In addition to the per-module sweep — and under the same bar, over the **resolved scope** (the whole repo only when no scope is set). A `/ponytail-audit` that finds nothing says `Lean already. Ship.` That is the expected result for a codebase that is already tidy; it is not a prompt to go looking harder.
+In addition to the per-module sweep — and under the same bar, over the **resolved scope** (the whole repo only when no scope is set). A `/ponytail-audit` that finds nothing says `Healthy. Nothing to fix.` That is the expected result for a codebase that is already tidy; it is not a prompt to go looking harder.
 
 - **Cross-module complexity:** run `/ponytail-audit` on the scope's paths, or apply the audit format from `references/ponytail.md` to them, for the cross-module over-engineering view — ranked, biggest cut first.
-- **Deferred shortcuts:** run `/ponytail-debt`, or the marker grep from `references/ponytail.md` with the scope's paths in place of `.`, to harvest the `ponytail:` markers (a deliberate simplification with a named ceiling and upgrade path). A marker is a decision, not a finding. Only two kinds are findings: a `no-trigger` marker (no upgrade path, so it rots silently), and a marker whose named ceiling is demonstrably hit — cite what now exceeds it.
+- **Deferred shortcuts:** run `/ponytail-debt`, or the marker grep from `references/ponytail.md` with the scope's paths in place of `.`, to harvest the `shortcut:` markers (older code may say `ponytail:`; a deliberate simplification with a named ceiling and upgrade path). A marker is a decision, not a finding. Only two kinds are findings: a `no-trigger` marker (no upgrade path, so it rots silently), and a marker whose named ceiling is demonstrably hit — cite what now exceeds it.
 - **Diff scope:** when the target is a PR or branch rather than the whole repo, run `/ponytail-review`, or apply the review format from `references/ponytail.md`, on the diff and scan only the touched modules.
 
-Audit, debt, and review output is one-liners. Convert each surviving line into the block format from step 2 — with a `path:line` location, a cluster key, priority, and confidence — before consolidating. A line you cannot pin to a `path:line` is dropped.
+Audit and review report findings with a location, a concrete problem, and the smallest fix; debt is one row per marker. Convert each surviving finding into the block format from step 2 — with a `path:line` location, a cluster key, priority, and confidence — before consolidating. A finding you cannot pin to a `path:line` is dropped.
 
 ## 4. Consolidate
 

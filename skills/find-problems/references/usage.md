@@ -46,8 +46,8 @@ something that measurably removes complexity a reader is already paying for — 
 the input or state that triggers it. Everything else is not a finding, including: taste
 (naming, formatting, "I'd write it differently"), "could be more generic/extensible", an
 abstraction debate, a trivial test gap, doc polish, and a trade-off the code already names with a
-`ponytail:` marker (unless the marker names no upgrade trigger, or its ceiling is demonstrably
-hit).
+`shortcut:` marker (older code may say `ponytail:`) — unless the marker names no upgrade trigger,
+or its ceiling is demonstrably hit.
 
 ## How big a run is
 
@@ -67,7 +67,7 @@ Every scan runs in Ponytail mode with the ruleset vendored at
 | Base mode | `/ponytail full` (`ultra` for maximum deletion) |
 | Cross-module complexity audit (over the scope) | `/ponytail-audit` |
 | Diff/PR over-engineering review | `/ponytail-review` |
-| Harvest deferred `ponytail:` markers | `/ponytail-debt` |
+| Harvest deferred `shortcut:` markers (older `ponytail:` too) | `/ponytail-debt` |
 
 The vendored copy travels with the skill so the lens works in harnesses without the plugin. It is
 a pinned subset — do not edit it to "improve" a finding; re-vendor when upstream changes.
@@ -77,15 +77,15 @@ a pinned subset — do not edit it to "improve" a finding; re-vendor when upstre
 These run over the scope when one is set, the whole repo otherwise.
 
 - **One diff or PR:** run `/ponytail-review` on the diff and scan only the touched modules.
-- **Deferred shortcuts:** `/ponytail-debt` harvests the `ponytail:` markers. A marker is a
-  decision, not a finding — only a `no-trigger` one (no upgrade path) or one whose named ceiling
-  is demonstrably hit becomes a finding.
+- **Deferred shortcuts:** `/ponytail-debt` harvests the `shortcut:` markers (older code may say
+  `ponytail:`). A marker is a decision, not a finding — only a `no-trigger` one (no upgrade path)
+  or one whose named ceiling is demonstrably hit becomes a finding.
 - **Cross-module complexity:** `/ponytail-audit` gives the cut list, ranked biggest first —
   better than asking each module subagent for a global view.
 
-Their one-line output becomes regular finding blocks, each pinned to a `path:line`, before the
-report is consolidated; subagents never use the Ponytail closing lines (`net: ...`,
-`Lean already. Ship.`).
+Their output becomes regular finding blocks, each pinned to a `path:line`, before the report is
+consolidated; subagents never use the Ponytail report closing lines (`Verdict: ...`, `Lean: ...`,
+`Healthy. Nothing to fix.`).
 
 ## Troubleshooting
 

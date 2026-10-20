@@ -24,6 +24,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Re-vendored the Ponytail ruleset at 5.3.2: refreshed the before-you-write/ladder rules,
+  renamed deferred markers to `shortcut:` (older `ponytail:` markers still count), and updated
+  the review/audit/debt formats.
 - `sweep` now defaults to `--depth review` and runs create → fix → review → fix findings in one
   pass behind a single run gate. The separate file, fix, review, and post-review gates are gone;
   a phase ending on success no longer stops the run or prints a next-command handoff. Lower depths
