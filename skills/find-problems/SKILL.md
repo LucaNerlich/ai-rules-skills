@@ -9,9 +9,9 @@ disable-model-invocation: true
 Discover real problems across a codebase by fanning out one subagent per module, then consolidate into an evidence-backed report. This is the discovery front of the chain:
 
 ```
-find-problems  →  /create-issues  →  /fix-issues  →  /review-issues
-   (report)         (prioritized       (stacked         (review comments
-                     issues)            PR chain)        + agent instructions)
+find-problems  →  /create-issues  →  /fix-issues  →  /review-issues  →  /fix-findings  →  /merge-prs
+   (report)         (prioritized       (stacked         (review comments     (verified fixes,    (opt-in)
+                     issues)            PR chain)        + agent instructions) on-layer + filed)
 ```
 
 Run the whole chain in one command with `/sweep`. Practical how-to — scoping a run, sizing the

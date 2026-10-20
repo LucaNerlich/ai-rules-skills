@@ -37,7 +37,9 @@ agent, in a different context, days later. Do not rewrite it into prose — the 
 copy button.
 
 Then one summary review per PR (`gh pr review --comment`), since GitHub will not let you approve
-or request changes on your own PR.
+or request changes on your own PR. Its body ends with
+`<!-- review-issues:verdict <Looks good|Concerns|Blocked> <headOid> <diffHash> -->` — the marker
+`/merge-prs` uses as proof the review ran and the diff it reviewed. A PR without it is never merged.
 
 ## Dedupe
 
@@ -63,6 +65,11 @@ Every pass ends with:
 - **Out-of-scope findings** — a new bug the diff happened to expose, outside this PR's acceptance
   criteria. These, and only these, go to `/create-issues`, which keeps each fingerprint and uses
   the entry's `group` slug as the issue's cluster key. Dismissed findings are left out.
+
+`/fix-findings` is the next step and consumes both lists. It verifies each entry, commits the
+on-layer ones onto their branch, and files then fixes the out-of-scope ones in a separate
+file-disjoint stack. `/review-issues` itself never pushes. `/merge-prs` comes after the fixes and
+merges only PRs carrying this pass's verdict marker with every finding handled.
 
 Both are grouped by fix surface, and a long tail of `nit`s is rolled up into one entry. A review
 that posts twelve comments must not become twelve issues.
@@ -103,4 +110,5 @@ reposted.
 - Push code, merge, or change labels.
 - File an on-layer finding as a new issue.
 - Post an unverified hunch as a `blocker`.
+- Fix its own findings — that is `/fix-findings`, the next step.
 - Review the review-fix in the same run — one round per sweep cycle.

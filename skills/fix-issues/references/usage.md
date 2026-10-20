@@ -95,7 +95,7 @@ gh stack top
 gh stack submit --auto        # update the open PRs
 ```
 
-`/sweep --depth review --fix-on-layer` drives exactly this.
+`/fix-findings` (and `/sweep --depth review` through it) drives exactly this.
 
 ## `Fixes` vs `Refs`
 
@@ -128,6 +128,6 @@ medium and low work behind it. Re-run after answering the question on the issue.
 
 - Open standalone PRs (unless Stacked PRs are disabled **and** you approve).
 - Open a PR on a failing or unrun check.
-- Merge from the CLI — including `gh stack merge`, which exists and is deliberately unused.
+- Merge from this skill — the opt-in `/merge-prs` step owns merging, and it only merges reviewed PRs with every finding handled.
 - Close an issue by hand when a keyword will.
 - Set the repo's workflow labels (`release candidate`, `work in progress`, `scheduled`) — those are yours to apply.

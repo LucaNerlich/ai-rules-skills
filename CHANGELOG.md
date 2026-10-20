@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `fix-findings` skill and `/fix-findings` command: the fifth phase of the pipeline verifies every
+  finding `/review-issues` posted, commits on-layer findings onto their reviewed branch, and files
+  then fixes out-of-scope findings in a separate file-disjoint stack off trunk. It replies on each
+  finding with a `fix-findings:fixed|not-reproduced|filed` marker and resolves the threads it
+  handled.
+- `--on-layer-only` and `--dry-run` for the new phase.
+- `merge-prs` skill and `/merge-prs` command: the opt-in last phase merges a gh-stack chain
+  bottom-up with `gh stack merge` (longest eligible prefix), regular PRs with `gh pr merge`, or
+  plain git when explicitly chosen. It requires a review verdict, every finding handled, green
+  checks, and a mergeable PR; it reports merge-queue enqueues as queued and never bypasses branch
+  protection.
+- `--depth merge`, `--merge-method`, and `--merge-engine` for sweep, plus `merges.md` run state.
+- `review-issues` now writes a `review-issues:verdict` marker with the reviewed head and diff
+  hash, which `/merge-prs` uses as proof the review ran and that the merged diff is the reviewed
+  one (or a recorded fix).
+
+### Changed
+
+- `sweep --depth review` now runs `fix-findings` after the review gate, so a full sweep no longer
+  stops at posted comments. The post-review gate asks once whether to fix all findings.
+- `--depth merge` is the only depth that merges. `fix-issues` still never merges; the opt-in merge
+  step owns it.
+- `--fix-on-layer` is accepted as a deprecated no-op: fixing on-layer findings is the default at
+  `--depth review`.
+- `review-issues` handoff entries now carry a `title`, which `fix-findings` uses for its commit
+  messages and replies.
+- `fix-findings` fixed replies carry the pushed diff hash, so `/merge-prs` can tell a recorded fix
+  from a change pushed after the fix.
+
 ## [1.0.0] - 2026-10-19
 
 ### Added

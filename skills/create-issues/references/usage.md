@@ -27,8 +27,9 @@ whole or deferred whole.
 ## Optional companions
 
 `/find-problems` (writes the report this skill files best), `/fix-issues` (fixes the issues as
-stacked PRs), `/review-issues` (reviews those PRs), and `/sweep` (all of it in one command) are
-not required and may not ship with this copy. They live in
+stacked PRs), `/review-issues` (reviews those PRs), `/fix-findings` (fixes the findings it posts),
+`/merge-prs` (merges the reviewed, fixed PRs when asked), and `/sweep` (all of it in one command)
+are not required and may not ship with this copy. They live in
 [github.com/LucaNerlich/ai-rules-skills](https://github.com/LucaNerlich/ai-rules-skills):
 
 ```

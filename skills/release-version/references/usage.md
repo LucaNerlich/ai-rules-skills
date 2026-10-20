@@ -147,7 +147,7 @@ ships artifacts — the plan says `Release: will create` before anything is push
 ## Optional companions
 
 Nothing here requires another skill. `/sweep`, `/find-problems`, `/create-issues`, `/fix-issues`,
-and `/review-issues` live in the same bundle at
+`/review-issues`, `/fix-findings`, and `/merge-prs` live in the same bundle at
 [github.com/LucaNerlich/ai-rules-skills](https://github.com/LucaNerlich/ai-rules-skills):
 
 ```

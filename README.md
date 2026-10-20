@@ -17,7 +17,7 @@ the copy installed in the same harness.
 
 ## Sweep — the problem pipeline
 
-One command runs the whole cycle. A review finding in the fix goes back onto that layer; only a new bug becomes another issue:
+One command can run the whole cycle — scan to merge — stopping at the depth you choose. A review finding in the fix goes back onto that layer; only a genuine new bug becomes an issue — and gets fixed in its own file-disjoint stack:
 
 ```
 /sweep
@@ -25,13 +25,26 @@ One command runs the whole cycle. A review finding in the fix goes back onto tha
   ├─ create-issues   → priority:high|medium|low issues                     [gate]
   ├─ fix-issues      → file-disjoint stacked PR chains (gh-stack)          [gate]
   ├─ review-issues   → PR review comments + agent instructions             [gate]
-  ├─ on-layer finding → commit on that layer, never a new stack
-  └─ out-of-scope finding → create-issues → next /fix-issues pass
+  ├─ fix-findings    → verify + fix every finding                          [gate]
+  │   ├─ on-layer      → commit on that layer, never a new stack
+  │   ├─ out-of-scope  → create-issues → file-disjoint stack off trunk
+  │   └─ not reproduced → reply with evidence, change nothing
+  └─ merge-prs       → merge the reviewed, fixed PRs          (opt-in: --depth merge)
 ```
 
-Each phase is also a skill (and a `/command`) of its own; `/sweep --depth report|file|fix|review`
-stops where you want. The skills live in [`skills/`](skills/), the slash-command wrappers in
+Each phase is also a skill (and a `/command`) of its own; `/sweep --depth report|file|fix|review|merge`
+stops where you want — `review` includes fixing every finding it posted, and `merge` also lands the
+reviewed PRs. The skills live in [`skills/`](skills/), the slash-command wrappers in
 [`commands/`](commands/).
+
+`/fix-findings` is the fifth phase and a standalone skill: it verifies each posted finding,
+commits on-layer findings onto their reviewed branch, and files then fixes out-of-scope findings
+in a separate file-disjoint stack. A finding that does not reproduce gets a reply and no change.
+
+`/merge-prs` is the opt-in sixth phase: it merges a stack bottom-up with `gh stack merge` up to the
+longest eligible prefix, regular PRs with `gh pr merge`, and plain git only when explicitly asked.
+A PR is eligible only with a `review-issues` verdict, every finding handled, green checks, and a
+mergeable state; it never merges the out-of-scope stack from the same run.
 
 Every skill has a practical guide next to it — `skills/<name>/references/usage.md` — with recipes,
 worked examples, and troubleshooting. `SKILL.md` is the contract; `usage.md` is the walkthrough.
@@ -50,7 +63,9 @@ Anti-sprawl controls, all confirmed with you at their gate rather than chosen si
 | `--max N` | cap issues filed / fixed (counts issues after clustering, never cuts a cluster in half) |
 | `--priority high\|medium\|low` | lowest priority to file and fix (default `low`) |
 | `--include-speculative` | also file `confidence: speculative` findings (off by default) |
-| `--fix-on-layer` | commit review fixes onto the open layer instead of leaving the comment |
+| `--merge-method squash\|merge\|rebase` | method for `gh stack merge` / `gh pr merge`; default is the repo's only allowed method, else asked (squash with `--yes`) |
+| `--merge-engine auto\|stack\|pr\|git` | how to merge; raw `git` is explicit only and never for a stack |
+| `--fix-on-layer` | deprecated no-op — `--depth review` fixes the on-layer findings by default |
 
 ## release-version
 

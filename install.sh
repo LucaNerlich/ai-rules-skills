@@ -16,7 +16,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHAIN=(sweep find-problems create-issues fix-issues review-issues release-version)
+CHAIN=(sweep find-problems create-issues fix-issues review-issues fix-findings merge-prs release-version)
 
 CHECK=0; INIT=0; declare -a ONLY=()
 while [ $# -gt 0 ]; do

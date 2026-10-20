@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Turn a set of findings into well-scoped GitHub issues, each carrying exactly one priority label. The result is a prioritized backlog, highest priority first.
 
-This skill stands alone: hand it a report, a review, or nothing (it scans), and it files issues. `/find-problems` (produces the report), `/fix-issues` (fixes the issues as stacked PRs), `/review-issues`, and `/sweep` (the whole chain in one command) are **optional companions** from [github.com/LucaNerlich/ai-rules-skills](https://github.com/LucaNerlich/ai-rules-skills) — nothing here needs them. Installing them: [`references/usage.md`](references/usage.md#optional-companions).
+This skill stands alone: hand it a report, a review, or nothing (it scans), and it files issues. `/find-problems` (produces the report), `/fix-issues` (fixes the issues as stacked PRs), `/review-issues` (reviews those PRs), `/fix-findings` (fixes the findings it posts), `/merge-prs` (merges the reviewed, fixed PRs when asked), and `/sweep` (the whole chain in one command) are **optional companions** from [github.com/LucaNerlich/ai-rules-skills](https://github.com/LucaNerlich/ai-rules-skills) — nothing here needs them. Installing them: [`references/usage.md`](references/usage.md#optional-companions).
 
 Practical how-to — sources, the grouping levels, rollups, labels, dedupe behaviour, troubleshooting: [`references/usage.md`](references/usage.md).
 

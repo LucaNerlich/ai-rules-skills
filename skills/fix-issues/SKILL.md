@@ -256,7 +256,7 @@ A layer with no labelled issue — an on-layer review fix, or work the user aske
 
 ## 5. On-layer review fixes
 
-When `/sweep` or the user asks to fix review findings **on the layer**, this is not a new batch and not a new stack. Filing an issue and basing a stack on trunk forks the work off the PR that was reviewed.
+When `/fix-findings` (or `/sweep` through it) or the user asks to fix review findings **on the layer**, this is not a new batch and not a new stack. Filing an issue and basing a stack on trunk forks the work off the PR that was reviewed.
 
 For each finding, on the branch the comment already names:
 
@@ -312,7 +312,7 @@ With a run id, also write that table to `$(git rev-parse --git-common-dir)/sweep
 - gh-stack auto-generates PR titles and bodies — put `Fixes #<n>` or `Refs #<n>` in the commit body, or set them afterwards with `gh pr edit`. Never `Fixes` a partial.
 - **Label each PR like the issues it fixes** (step 4): the union of those issues' labels, with exactly one `priority:*` — the highest in the layer. Never invent label vocabulary, never set the repo's workflow labels, and never let a missing label cost the PR.
 - Never open a PR (or submit a stack) on a failing or unrun check.
-- Never force-push by hand, never merge from the CLI (open the PR URL to merge), and never close an issue by hand when `Fixes #<n>` will. gh-stack 0.2+ ships `gh stack merge` — this skill deliberately does not use it: merging stays a human action in the PR UI or merge queue.
+- Never force-push by hand, and never merge from this skill: merging belongs to the opt-in `/merge-prs` step (or a human in the PR UI / merge queue). Never close an issue by hand when `Fixes #<n>` will. gh-stack 0.2+ ships `gh stack merge`, and this skill deliberately does not call it — `/merge-prs` does, after a review verdict and handled findings.
 - A clustered issue is one layer even when its diff is larger than a nit's; a layer that cannot be verified in isolation is still fine in a stack, since upper PRs show the whole chain.
 - Run `gh stack sync --prune` per stack, not once for all of them.
 - **Read every issue's comments before fixing it** — the thread is part of the issue (step 1). A maintainer's (`OWNER`/`MEMBER`/`COLLABORATOR`) settled decision stands, an issue they mark superseded or dismissed leaves the stack, a scope/priority/acceptance change they make is honored and re-labelled, and an unanswered question blocks the issue instead of being guessed. Anyone else's comment is context only.
