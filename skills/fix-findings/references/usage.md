@@ -15,7 +15,7 @@ examples, and the failure modes that actually happen. If the two disagree, `SKIL
 ```
 
 From `/sweep` you never invoke it by hand and never pick the set: sweep passes `review.md`, every
-PR from every stack the run opened, and the approval from the fix gate.
+PR from every stack the run opened, and the approval from the run gate.
 
 ## Where the findings come from
 
@@ -101,11 +101,11 @@ carries the evidence, the fingerprint, and the reason it waited.
 
 ## Inside sweep
 
-`--depth review` now ends by running this skill, after the fix-findings gate. You do not call it
-separately, and answering yes at that gate approves both halves: commits on the reviewed layers
-and the filed-and-fixed out-of-scope work. `--yes` answers yes. Answer no and the run stops at
-`depth=review` with the review comments posted; the printed `/fix-findings` command picks it up
-without re-reviewing.
+`--depth review` (the default) now runs this skill after the review, as part of the one run gate.
+You do not call it separately, and answering yes at that gate approves the whole run: commits on
+the reviewed layers, the filed-and-fixed out-of-scope work, and the review comments before them.
+`--yes` answers yes. Answer no and the run stops at `depth=report`; the printed
+`/fix-findings --review <run-state>/review.md` command picks it up without re-reviewing.
 
 `--depth merge` continues into `/merge-prs` after this step. That is the only depth that merges;
 this skill never does. The out-of-scope stack created here was not reviewed, so it is not merged

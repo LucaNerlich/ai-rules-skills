@@ -3,19 +3,51 @@
 `SKILL.md` is the normative instruction set. This file is the how-to: recipes, worked
 examples, and the failure modes that actually happen. If the two disagree, `SKILL.md` wins.
 
+## One command, one gate
+
+By default, `/sweep` runs the whole pipeline to **ready-to-merge**:
+
+```
+/sweep
+  → scan → file issues → fix as stacks → review every PR → fix every finding
+  → stop: reviewed PRs are ready to merge
+```
+
+It asks **once**, after the report, showing the scope, projected issues, stack plan, and what the
+run will do. Answer yes and it does not stop again — no "Next: run /review-issues", no "Next:
+/fix-findings", no per-phase confirmation. That is the point of the command.
+
+`--yes` skips the question. `--depth merge` adds one more question, the merge gate, because
+merging is irreversible.
+
 ## Pick a depth
 
 ```
-/sweep                                   # scan + file issues, then stop  (default)
+/sweep                                   # default: scan → file → fix → review → fix findings
+/sweep --depth review                    # same, explicit
 /sweep --depth report                    # scan only, file nothing
-/sweep --depth fix                       # + fix as file-disjoint stacks
-/sweep --depth review                    # + review every stack, then fix every finding
+/sweep --depth file                      # scan + file issues, then stop
+/sweep --depth fix                       # + open the stacks, then stop
 /sweep --depth merge                     # + merge the reviewed, fixed PRs (opt-in)
 ```
 
-Report → file are the two cheap steps. `fix` writes code, `review` posts comments and then fixes
-the findings. `merge` is the only depth that merges, and only after the merge gate. When you only
-want the list, stop at `report`.
+The default is `review`. A lower depth is an **explicit stop**, not a fallback and not a failure.
+When you only want the list, pass `report`; when you want to inspect the PRs before review, pass
+`fix`.
+
+## The usual run
+
+```
+/sweep --scope directwerk-podcast
+```
+
+1. It scans the podcast module, files clustered issues, and asks **once** with the full plan.
+2. You approve; it builds the file-disjoint stacks and opens the PRs.
+3. It reviews every PR, then fixes every finding — on-layer commits, out-of-scope work filed and
+   fixed in its own file-disjoint stack — without stopping in between.
+4. It ends with **Ready to merge** and the reviewed PR list.
+
+Add `--depth merge` if you also want it to land the reviewed, fixed PRs after the merge gate.
 
 ## Narrow it
 
@@ -28,18 +60,6 @@ want the list, stop at `report`.
 Any of the three prints the resolved path set and asks you to confirm it. If a term resolves to
 nothing, the run stops — it does not fall back to the whole repo. That is deliberate: a narrow
 run that silently widens is how you get 40 unrelated issues.
-
-## The usual run
-
-```
-/sweep --scope directwerk-podcast --depth review
-```
-
-1. It scans the podcast module, files clustered issues, and stops to ask how to fix them.
-2. You approve the plan; it builds the stacks and opens the PRs.
-3. It reviews every PR, asks once, then fixes every finding: on-layer commits on the reviewed
-   branches, out-of-scope work filed and fixed in its own file-disjoint stack.
-4. Add `--depth merge` if you also want it to land the reviewed, fixed PRs after the merge gate.
 
 ## Scope is a contract, not a filter
 
@@ -65,7 +85,11 @@ results — is saved untracked under `.git/sweep/<id>/`, so you can continue fro
 ```
 
 - Run state present → it reuses the report and its scope, and the stacks it already opened.
-- Issues already filed under that run id → it skips straight to the fix gate for those.
+- A resumed run continues in **auto mode**: it does not re-ask the run gate. Only `--depth merge`
+  adds the merge gate, unless `--yes`.
+- `review.md` exists with the reviewed PR set → the review is done. Resume at `fix-findings` (or
+  the merge gate); it never re-reviews those PRs just because a fix or merge failed.
+- Issues already filed under that run id → it skips straight to the fix phase for those.
 - Issues already in an open PR or on a `fix/<n>-*` branch → reported as in flight, never re-fixed.
 - Findings already replied to with `fix-findings:fixed|not-reproduced|filed` → not retried.
 - Run state missing (another clone) → issues are found by marker and PRs through their links; a
@@ -76,24 +100,34 @@ that is `/fix-issues`, not `/sweep --resume`.
 
 ## Unattended runs
 
-`--yes` answers the gates with the flag values. It does not mean "one PR per issue", it does not
-file speculative findings, and at `--depth review` it does fix every finding — that is the
-depth's default.
+`--yes` answers the run gate with the flag values. At `--depth merge` it also answers the merge
+gate. It does not mean "one PR per issue", it does not file speculative findings, and it never
+bypasses branch protection.
 
 ```
-/sweep --scope storage --depth file --yes        # scan, file, done
-/sweep --scope storage --depth review --yes      # review, then fix every finding
-/sweep --scope storage --depth merge --yes       # also merge what is eligible
+/sweep --scope storage --yes                 # full run to ready-to-merge, no questions
+/sweep --scope storage --depth merge --yes   # also merge what is eligible
 ```
 
 Use it in CI-style runs where nobody is watching. Read the defaults first — they are the
-anti-sprawl ones (recommended/recommended, 5 layers per stack, file-disjoint stacks). At
-`--depth merge`, `--yes` still refuses an unreviewed PR, an unhandled finding, a failing check, and
-a merge blocked by branch protection.
+anti-sprawl ones (recommended/recommended, 5 layers per stack, file-disjoint stacks).
+
+## No phase handoffs
+
+In auto mode, a phase ending on success is not a stop. The pipeline does **not** end with:
+
+- `Next: run /fix-issues` after filing issues;
+- `Next: run /review-issues` after opening the stacks;
+- `Next: run /fix-findings` after posting review comments;
+- `Next: run /merge-prs` after fixing findings.
+
+Those commands appear only when you passed a lower `--depth` explicitly, or when a phase failed.
+If you see "nothing was merged" as a status at the default depth, that is the bug this mode fixed:
+the run should end with a **Ready to merge** list, not a handoff.
 
 ## After the review: what gets fixed where
 
-`--depth review` runs `fix-findings` after the review gate. It verifies every posted finding
+The review and the fixes are one uninterrupted step. `fix-findings` verifies every posted finding
 before acting, and each one lands in exactly one place:
 
 | Finding | Where it goes |
@@ -105,14 +139,15 @@ before acting, and each one lands in exactly one place:
 | dismissed (resolved thread or a maintainer's rejection) | never touched |
 
 The fixes are not reviewed in the same run. If you want them reviewed, that is another
-`/review-issues` pass — one round per sweep.
+`/review-issues` pass — one round per sweep. The out-of-scope stack created in the run is new work
+and is not reviewed either; it is not part of the ready-to-merge set.
 
 ## Merging: opt-in and last
 
-`--depth merge` adds one gate and one step. It merges only the PRs the review covered, never the
-out-of-scope stack the fix step created — that stack was not reviewed. A PR is eligible only with
-a `review-issues:verdict` marker, the reviewed diff (or a recorded `fix-findings` hash), every
-finding handled, green checks, and a mergeable state.
+`--depth merge` adds one gate and one step after the fixes. It merges only the PRs the review
+covered, never the out-of-scope stack the fix step created — that stack was not reviewed. A PR is
+eligible only with a `review-issues:verdict` marker, the reviewed diff (or a recorded
+`fix-findings` hash), every finding handled, green checks, and a mergeable state.
 
 - A stack merges bottom-up with `gh stack merge`, up to the **longest eligible prefix**. The layer
   above the first hold stays open; the stack can land piecewise.
@@ -149,7 +184,9 @@ is the sprawl you were trying to avoid — reach for it only for a tiny batch.
 | "scope did not resolve" | feature term matched nothing | give a path or module name |
 | Files nothing, report says `CLEAN` | the code is fine | this is the correct outcome, not a failed run |
 | Files nothing, report looks fine | everything was duplicate or speculative | check the skipped list; `--include-speculative` to file guesses |
-| Review comments posted, nothing fixed | you answered no at the fix gate | rerun `/fix-findings --review <run-state>/review.md`; do not re-review |
+| Stopped after filing | you passed `--depth file` | drop it; the default continues to review and fixes |
+| Stopped after opening PRs with "Next: review" | you passed `--depth fix` (or a phase failed) | drop it; the default continues. If it happens without `--depth fix`, that is a bug — re-run with the default |
+| Stopped after review, findings unfixed | a pre-auto `--depth review` run, or a failed fix phase | re-run `/sweep --resume <id>`; it continues and does not re-review |
 | An out-of-scope finding is filed but not fixed | its files overlap an open stack | that is the file-disjoint rule; it waits until that stack merges |
 | A finding came back "not reproduced" | it did not hold against the code when verified | the reply carries the evidence; the thread stays open for a maintainer |
 | Nothing merged at `--depth merge` | the merge gate was answered no, or nothing was eligible | read the held reasons; fix the finding or wait for green, then `/merge-prs` |
@@ -157,7 +194,6 @@ is the sprawl you were trying to avoid — reach for it only for a tiny batch.
 | Merge reported `queued` | the base branch uses a merge queue | wait for the queue; do not re-enqueue |
 | `gh stack merge` says "not a stack" | the PRs are base-chained but not a GitHub stack | use `--merge-engine pr` |
 | A merge failed on branch protection | the repo needs an approval or check the pipeline cannot provide | get a human approval or fix the check; never bypass |
-| Fix gate shows fewer issues than filed | some were `sweep:blocked` | answer the question on that issue, then re-run |
 | Stacked PRs disabled | repo has no Stacked PRs | it asks; approve the plain-PR fallback or stop |
 | Nothing happens at all | `/sweep` not in the harness | `./install.sh`, then restart the harness |
 
@@ -166,6 +202,7 @@ is the sprawl you were trying to avoid — reach for it only for a tiny batch.
 - Widen a scope you set.
 - File a guess (`confidence: speculative`) unless you asked.
 - Open anything to justify the run: a `CLEAN` report ends the cycle.
+- Stop after a successful phase with a "Next: run …" handoff in auto mode.
 - Build a stack longer than `--max-layers`, or a second stack touching the same files.
 - File a defect in one of its own PRs as a new issue — that goes back onto the layer.
 - Fix an out-of-scope finding on a reviewed layer, or start a stack that overlaps an open one.

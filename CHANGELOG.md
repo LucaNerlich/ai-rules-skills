@@ -24,8 +24,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- `sweep --depth review` now runs `fix-findings` after the review gate, so a full sweep no longer
-  stops at posted comments. The post-review gate asks once whether to fix all findings.
+- `sweep` now defaults to `--depth review` and runs create → fix → review → fix findings in one
+  pass behind a single run gate. The separate file, fix, review, and post-review gates are gone;
+  a phase ending on success no longer stops the run or prints a next-command handoff. Lower depths
+  are explicit stops.
 - `--depth merge` is the only depth that merges. `fix-issues` still never merges; the opt-in merge
   step owns it.
 - `--fix-on-layer` is accepted as a deprecated no-op: fixing on-layer findings is the default at

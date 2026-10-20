@@ -17,24 +17,25 @@ the copy installed in the same harness.
 
 ## Sweep — the problem pipeline
 
-One command can run the whole cycle — scan to merge — stopping at the depth you choose. A review finding in the fix goes back onto that layer; only a genuine new bug becomes an issue — and gets fixed in its own file-disjoint stack:
+One command runs the pipeline to **ready-to-merge** by default, with one gate and no phase handoffs. A review finding in the fix goes back onto that layer; only a genuine new bug becomes an issue — and gets fixed in its own file-disjoint stack:
 
 ```
-/sweep
+/sweep                          (default --depth review)
   ├─ find-problems   → findings report                              (read-only)
-  ├─ create-issues   → priority:high|medium|low issues                     [gate]
-  ├─ fix-issues      → file-disjoint stacked PR chains (gh-stack)          [gate]
-  ├─ review-issues   → PR review comments + agent instructions             [gate]
-  ├─ fix-findings    → verify + fix every finding                          [gate]
+  ├─ create-issues   → priority:high|medium|low issues             [run gate]
+  ├─ fix-issues      → file-disjoint stacked PR chains (gh-stack)
+  ├─ review-issues   → PR review comments + agent instructions
+  ├─ fix-findings    → verify + fix every finding
   │   ├─ on-layer      → commit on that layer, never a new stack
   │   ├─ out-of-scope  → create-issues → file-disjoint stack off trunk
   │   └─ not reproduced → reply with evidence, change nothing
   └─ merge-prs       → merge the reviewed, fixed PRs          (opt-in: --depth merge)
 ```
 
-Each phase is also a skill (and a `/command`) of its own; `/sweep --depth report|file|fix|review|merge`
-stops where you want — `review` includes fixing every finding it posted, and `merge` also lands the
-reviewed PRs. The skills live in [`skills/`](skills/), the slash-command wrappers in
+Each phase is also a skill (and a `/command`) of its own. `/sweep` defaults to `--depth review`:
+one run gate, then scan → file → fix → review → fix findings, ending with **ready to merge**. A
+lower `--depth` (`report`, `file`, `fix`) is an explicit stop, and `--depth merge` adds the opt-in
+merge gate. The skills live in [`skills/`](skills/), the slash-command wrappers in
 [`commands/`](commands/).
 
 `/fix-findings` is the fifth phase and a standalone skill: it verifies each posted finding,
@@ -50,12 +51,12 @@ Every skill has a practical guide next to it — `skills/<name>/references/usage
 worked examples, and troubleshooting. `SKILL.md` is the contract; `usage.md` is the walkthrough.
 Both ship to every harness via `install.sh`.
 
-Anti-sprawl controls, all confirmed with you at their gate rather than chosen silently:
+Anti-sprawl controls, all shown at the one run gate rather than chosen silently:
 
 | Flag | Effect |
 | --- | --- |
 | `--scope <path\|module\|feature>` (or a bare positional) | narrow the run to one module or area; the default (or `.`) is the whole repo. Resolved to an explicit path set and confirmed before scanning |
-| `--issue-grouping recommended\|coarse\|strict` | how findings become issues. Asked once, at the file gate |
+| `--issue-grouping recommended\|coarse\|strict` | how findings become issues. Default `recommended`; the run gate shows the projected count |
 | `--pr-grouping recommended\|strict\|coarse` | how issues become PRs. A separate knob — `coarse` on both double-folds |
 | `--grouping <level>` | shorthand that sets both grouping knobs to the same level |
 | `--max-layers N` | cap layers per stack (default 5). Overlap past the cap stays one stack |

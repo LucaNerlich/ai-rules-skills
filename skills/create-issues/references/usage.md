@@ -60,11 +60,12 @@ If it cannot be pointed at, it is not an issue. That includes a `TODO` with no c
 | `coarse` | fold same-surface clusters into one issue with sub-checklists | you want a short backlog and are happy with bigger tickets |
 | `strict` | one issue per finding instance | a very small, high-stakes batch |
 
-The level is asked **once** — inside sweep at the file gate, or here when invoked directly, next
-to the drafted table built at `--issue-grouping` (default `recommended`). Pick another level there
-and the batch is rebuilt from the deduped findings, `--priority`/`--max` are reapplied, and the
-new table comes back for a go-ahead — what gets filed is always exactly the table you approved.
-It is issue grouping only; `fix-issues` asks the PR-side question separately.
+The level is chosen by `--issue-grouping` (default `recommended`). Inside sweep it is passed down
+and never asked. When invoked directly, it is asked **once**, next to the drafted table: pick
+another level there and the batch is rebuilt from the deduped findings, `--priority`/`--max` are
+reapplied, and the new table comes back for a go-ahead — what gets filed is always exactly the
+table you approved. It is issue grouping only; `--pr-grouping` is the separate PR-side knob, asked
+only when `fix-issues` is invoked directly.
 
 ## Rollups
 
