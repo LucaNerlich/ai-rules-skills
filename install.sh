@@ -123,9 +123,18 @@ stale() { # skill dst -> installed files the repo no longer ships
   done
 }
 
+# A duplicated `## ` heading means a botched edit; never ship it.
+for s in "${CHAIN[@]}"; do
+  [ -f "$REPO/skills/$s/SKILL.md" ] || { echo "no such skill: $s" >&2; exit 2; }
+  dup=$(grep '^## ' "$REPO/skills/$s/SKILL.md" | LC_ALL=C sort | uniq -d || true)
+  if [ -n "$dup" ]; then
+    printf 'DUPLICATE HEADING %s/SKILL.md: %s\n' "$s" "$(printf '%s' "$dup" | tr '\n' ' ')" >&2
+    if [ "$CHECK" = 1 ]; then drift=1; else exit 2; fi
+  fi
+done
+
 while IFS= read -r h; do
   for s in "${CHAIN[@]}"; do
-    [ -f "$REPO/skills/$s/SKILL.md" ] || { echo "no such skill: $s" >&2; exit 2; }
     dst="$h/skills/$s"
     while IFS= read -r rel; do
       sync_file "$REPO/skills/$s/$rel" "$dst/$rel"

@@ -187,6 +187,10 @@ dependency bump that changes the public surface.
 Pre-1.0: `0.x` breaking → minor, `0.0.x` → patch. If the project already uses `0.x` majors for
 breaking changes (check its changelog), follow the project, not the convention.
 
+**No previous release:** there is nothing to bump from. Treat it as `0.1.0` unless the user passes
+`--version` or the repo documents a starting version. Never infer `1.0.0` — declaring stability is a
+human decision, so ask when the user has not said.
+
 Prereleases (`--prerelease`): `1.2.3-rc.1` → `1.2.3-rc.2`, and the final `1.2.3` supersedes them.
 
 **`--version` wins over everything.** Validate it is semver (or the ecosystem's scheme — PEP 440,

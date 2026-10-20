@@ -28,6 +28,8 @@ approved the version.
 - `git push --tags` — it pushes the branch and the one tag it just created.
 - Hand-write a changelog that Changesets, release-please, semantic-release, or git-cliff owns.
 - Guess which package to release in a monorepo when the CWD does not identify one.
+- Declare a first release stable on its own: with no prior version it proposes `0.1.0` unless you
+  pass `--version` (or the repo documents a starting version).
 
 ## Worked examples
 
